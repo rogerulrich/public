@@ -272,6 +272,24 @@ table.t tbody tr:last-child td{border-bottom:0}
   .detail-head .btn-row{width:100%}
 }
 .search-m{display:none !important;width:100%;max-width:none}
+/* Unterlagen */
+.doc-tabs{padding:12px 18px 0}
+.dropzone{margin:12px 18px;border:2px dashed var(--line);border-radius:12px;padding:16px;display:flex;gap:12px;align-items:center;color:var(--ink-2);background:var(--bg);transition:border-color .15s,background .15s}
+.dropzone>svg{width:28px;height:28px;flex:none;color:var(--muted)}
+body.dragging .dropzone{border-color:var(--salmon);background:var(--red-50)}
+.dropzone.dz-over,body.dragging .dropzone.dz-over{border-color:var(--red);background:var(--red-100)}
+.dropzone.dz-over>svg{color:var(--red)}
+body.dragging .doc-tabs .chip{outline:2px dashed var(--salmon);outline-offset:2px}
+.doc-tabs .chip.dz-over{outline:2px solid var(--red)}
+.dz-pick{color:var(--red);font-weight:600;cursor:pointer;text-decoration:underline}
+.dz-mob{display:none}
+@media (pointer:coarse){.dz-desk{display:none}.dz-mob{display:inline}}
+.doc-list{list-style:none;margin:0;padding:0 0 6px}
+.doc-list li{display:flex;align-items:center;gap:10px;padding:9px 18px;border-top:1px solid var(--line-2)}
+.doc-ic svg{width:22px;height:22px;color:var(--red)}
+.doc-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:var(--ink);font-weight:500;display:flex;flex-direction:column;overflow-wrap:anywhere}
+.doc-name:hover{color:var(--red)}
+.doc-empty{padding:4px 18px 16px}
 </style>
 </head>
 <body>
@@ -670,7 +688,7 @@ function updateList(){
 
 /* ---------- Detail / Erfassen ---------- */
 function vDetail(id){
-  const isNew=id===null;
+  const isNew=id===null; docTab='auff';
   const k=isNew?{id:null,art:'PK',zaehler:'',objekt:'',adresse:'',plz:'',ort:'',eigentuemer:'',rechnungsadresse:'',telEig:'',telMieter:'',bem1:'',bem2:'',projekt:'',kontrolleur:'livio',frist:monthEnd(3),termin:'',zeit:'',dringend:0,abrechnung:'pauschal',pauschale:370,periode:'20',aufwandH:2,log:[],fristHist:[]}:state.open.find(x=>x.id===id);
   if(!k) return `<a class="back" href="#/kontrollen">${ic('left')}Zurück</a><div class="card empty" style="margin-top:16px">Diese Kontrolle ist nicht mehr offen (evtl. bereits als durchgeführt gemeldet).</div>`;
   const opt=(arr,val)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(val)===String(v)?'selected':''}>${esc(l)}</option>`).join('');
@@ -724,8 +742,9 @@ function vDetail(id){
         ${f('bem2','Bemerkung 2',`<textarea class="input" id="f_bem2" name="bem2">${esc(k.bem2)}</textarea>`,'full')}
       </div></div>
     </div>
-    <div class="grid" style="gap:18px;position:sticky;top:80px">
-      ${isNew?`<div class="card"><div class="card-b"><div class="hint-box">${ic('bolt')}<div>In der finalen Version kann das Aufgebot (PDF/Mail des Netzbetreibers) direkt importiert werden – Adresse, Zählernummer und Frist werden dann automatisch übernommen.</div></div></div></div>`:`
+    <div class="grid" style="gap:18px">
+      ${isNew?`<div class="card"><div class="card-b"><div class="hint-box">${ic('bolt')}<div>In der finalen Version kann das Aufgebot (PDF/Mail des Netzbetreibers) direkt importiert werden – Adresse, Zählernummer und Frist werden dann automatisch übernommen.</div></div></div></div>
+      <div class="card"><div class="card-b"><div class="hint-box">${ic('pdf')}<div>Aufforderungen und Mail-Verläufe (PDF) können nach dem Anlegen per Drag &amp; Drop zum Objekt abgelegt werden.</div></div></div></div>`:`
       <div class="card"><div class="card-h"><h2>Aktionen</h2></div><div class="side-actions">
         <button class="btn" type="button" data-action="modal" data-m="call" data-id="${k.id}">${ic('phone')}Anruf protokollieren</button>
         <button class="btn" type="button" data-action="modal" data-m="termin" data-id="${k.id}">${ic('cal')}Termin ${k.termin?'verschieben':'vereinbaren'}</button>
@@ -733,8 +752,9 @@ function vDetail(id){
         <button class="btn" type="button" data-action="toast" data-msg="Terminbestätigung per Mail – in der finalen Version">${ic('mail')}Terminbestätigung senden</button>
         <button class="btn btn-ok" type="button" data-action="modal" data-m="done" data-id="${k.id}">${ic('check')}Als durchgeführt melden</button>
       </div></div>
+      <div class="card" id="docsCard">${docsCard(k)}</div>
       <div class="card"><div class="card-h"><h2>Verlauf</h2><span class="small muted">${k.log.length} Einträge</span></div>
-        <ul class="timeline">${k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('')}</ul></div>`}
+        <ul class="timeline">${k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit',doc:'pdf'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('')}</ul></div>`}
     </div>
   </div>
   <div class="sticky-save"><a class="btn" href="#/kontrollen">Abbrechen</a><button class="btn btn-primary" data-action="save">${ic('check')}${isNew?'Kontrolle anlegen':'Änderungen speichern'}</button></div>
@@ -877,7 +897,7 @@ function vMehr(){
     ${it('#/konto','user','Mein Konto','Passwort, Fingerabdruck-Login')}
     <div class="li" data-action="logout"><div class="tl-ic">${ic('logout')}</div><div class="body"><div class="t1">Abmelden</div><div class="t2">Angemeldet als ${esc(me().name)}</div></div></div>
     <div class="li" data-action="reset"><div class="tl-ic">${ic('reset')}</div><div class="body"><div class="t1">Demo-Daten zurücksetzen</div><div class="t2">Prototyp in den Ausgangszustand versetzen</div></div></div>
-  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.1</div>`;
+  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.3</div>`;
 }
 
 /* ---------- Anmeldung & Rollen ----------
@@ -1084,6 +1104,121 @@ const AUTH_ACTIONS={
   },
 };
 
+/* ---------- Unterlagen (PDF) am Objekt ---------- */
+Object.assign(IC,{
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+  trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+  pdf:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h1.5a1.5 1.5 0 0 1 0 3H8v-3zM8 16v2M13 13v5M13 13h1.5a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5H13"/>'
+});
+const DOK_KAT=[['auff','Aufforderungen','Aufforderung'],['mail','Mail-Verläufe','Mail-Verlauf']];
+const DOK_MAX=20*1024*1024;
+const docStore={}; let docTab='auff', docSeq=1;
+const objKey=k=>(k.adresse+'|'+k.plz).toLowerCase();
+const kb=n=>n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(n/1024))+' KB';
+
+/* Kleines Demo-PDF erzeugen, damit die Beispiel-Unterlagen geöffnet werden können */
+function demoPdf(lines){
+  const tx=s=>s.replace(/[äöüÄÖÜéèàß–„“]/g,c=>({'ä':'ae','ö':'oe','ü':'ue','Ä':'Ae','Ö':'Oe','Ü':'Ue','é':'e','è':'e','à':'a','ß':'ss','–':'-','„':'"','“':'"'}[c])).replace(/[()\\]/g,'\\$&');
+  const body=lines.map((l,i)=>`BT /F1 ${i===0?16:11} Tf 60 ${i===0?770:740-(i-1)*18} Td (${tx(l)}) Tj ET`).join('\n');
+  const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${body.length} >>\nstream\n${body}\nendstream`,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+  let out='%PDF-1.4\n'; const off=[];
+  objs.forEach((o,i)=>{off.push(out.length);out+=`${i+1} 0 obj\n${o}\nendobj\n`;});
+  const x=out.length;
+  out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`;
+  return new Blob([out],{type:'application/pdf'});
+}
+
+function docsFor(k){
+  const key=objKey(k);
+  if(!docStore[key]){
+    const l=[];
+    if(k.id%3!==2){ // Beispiel-Unterlagen für einen Teil der Objekte
+      const d=addDays(-40-(k.id*7)%90);
+      l.push({id:docSeq++,kat:'auff',name:`Aufforderung_${k.art}_${k.zaehler||k.id}.pdf`,size:180000+(k.id*7919)%250000,d,user:'Administrator',
+        demo:[`Aufforderung zur ${ART(k.art).name}`,`Objekt: ${k.adresse}, ${k.plz} ${k.ort}`,`Zaehler-Nr.: ${k.zaehler||'-'}`,`Frist: ${fd(k.frist)}`,'','Demo-Dokument aus dem Prototyp (fiktive Daten).']});
+      if(k.id%2===0) l.push({id:docSeq++,kat:'mail',name:`Mail-Verlauf_${(k.eigentuemer.split(',')[0]||'Eigentuemer').replace(/[^\wäöüÄÖÜ-]+/g,'_')}.pdf`,size:60000+(k.id*104729)%120000,d:addDays(-10-(k.id*3)%20),user:KONTROLLEURE.find(x=>x.id===k.kontrolleur)?.name||'Lukas',
+        demo:['Mail-Verlauf',`Betreff: Terminvereinbarung ${k.adresse}`,'Guten Tag, gerne bestaetigen wir den Termin fuer die Kontrolle.','Freundliche Gruesse','','Demo-Dokument aus dem Prototyp (fiktive Daten).']});
+    }
+    docStore[key]=l;
+  }
+  return docStore[key];
+}
+
+function docsCard(k){
+  const list=docsFor(k), cnt=c=>list.filter(x=>x.kat===c).length;
+  const shown=list.filter(x=>x.kat===docTab).sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
+  const kat=DOK_KAT.find(x=>x[0]===docTab);
+  return `<div class="card-h"><h2>Unterlagen zum Objekt</h2><span class="small muted">${list.length} PDF</span></div>
+    <div class="doc-tabs chips">${DOK_KAT.map(([c,l])=>`<button type="button" class="chip ${c===docTab?'on':''}" data-action="doctab" data-kat="${c}" data-doctab="${c}">${l} <span class="n">${cnt(c)}</span></button>`).join('')}</div>
+    <div class="dropzone" data-dropzone="${k.id}">
+      ${ic('upload')}
+      <div><b class="dz-desk">PDF hierher ziehen</b><b class="dz-mob">PDF anhängen</b><div class="tiny muted">als ${kat[2]} · <span class="dz-desk">oder </span><label class="dz-pick">Datei wählen<input type="file" accept="application/pdf,.pdf" multiple hidden data-docinput="${k.id}"></label> · max. 20 MB</div></div>
+    </div>
+    ${shown.length?`<ul class="doc-list">${shown.map(x=>`<li>
+      <span class="doc-ic">${ic('pdf')}</span>
+      <button type="button" class="doc-name" data-action="docopen" data-id="${k.id}" data-doc="${x.id}" title="Öffnen">${esc(x.name)}<span class="tiny muted">${fd(x.d)} · ${esc(x.user)} · ${kb(x.size)}</span></button>
+      <button type="button" class="btn btn-icon" data-action="docdel" data-id="${k.id}" data-doc="${x.id}" title="Entfernen">${ic('trash')}</button></li>`).join('')}</ul>`
+      :`<div class="doc-empty tiny muted">Noch keine ${kat[1]} zu diesem Objekt.</div>`}`;
+}
+function refreshDocs(k){ const el=document.getElementById('docsCard'); if(el) el.innerHTML=docsCard(k); }
+const kById=id=>state.open.find(x=>String(x.id)===String(id));
+
+async function addDocs(k,files,kat){
+  const list=docsFor(k); let ok=0; const err=[];
+  for(const f of files){
+    const head=new Uint8Array(await f.slice(0,5).arrayBuffer());
+    if(String.fromCharCode(...head)!=='%PDF-'){err.push(`„${f.name}“ ist kein PDF`);continue}
+    if(f.size>DOK_MAX){err.push(`„${f.name}“ ist grösser als 20 MB`);continue}
+    if(list.some(x=>x.name===f.name&&x.size===f.size)){err.push(`„${f.name}“ ist bereits angehängt`);continue}
+    list.push({id:docSeq++,kat,name:f.name,size:f.size,d:toISO(TODAY),user:me()?.name||'',file:f});
+    k.log.push({t:'doc',d:toISO(TODAY),txt:`PDF „${f.name}“ angehängt (${DOK_KAT.find(x=>x[0]===kat)[2]})`});
+    ok++;
+  }
+  docTab=kat; refreshDocs(k); refreshLog(k);
+  const okTxt=ok?(ok===1?'1 PDF angehängt':`${ok} PDFs angehängt`):'';
+  if(err.length) toast([okTxt,...err].filter(Boolean).join(' · '),1); else if(ok) toast(okTxt,0,'pdf');
+}
+function refreshLog(k){
+  const tl=document.querySelector('.timeline'); if(!tl) return;
+  tl.innerHTML=k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit',doc:'pdf'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('');
+  const c=tl.closest('.card')?.querySelector('.card-h .small'); if(c) c.textContent=k.log.length+' Einträge';
+}
+
+const DOC_ACTIONS={
+  doctab:d=>{docTab=d.kat;const k=kById(document.querySelector('[data-dropzone]')?.dataset.dropzone);if(k)refreshDocs(k)},
+  docopen:d=>{const k=kById(d.id);const x=docsFor(k).find(y=>String(y.id)===d.doc);if(!x)return;
+    const url=URL.createObjectURL(x.file||demoPdf(x.demo||[x.name]));window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000)},
+  docdel:d=>{const k=kById(d.id);const l=docsFor(k);const i=l.findIndex(y=>String(y.id)===d.doc);if(i<0)return;
+    if(!confirm(`„${l[i].name}“ entfernen?`))return;
+    const [x]=l.splice(i,1);k.log.push({t:'doc',d:toISO(TODAY),txt:`PDF „${x.name}“ entfernt`});refreshDocs(k);refreshLog(k);toast('PDF entfernt')},
+};
+
+/* Drag & Drop */
+const hasFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
+let dragDepth=0;
+document.addEventListener('dragenter',e=>{if(!hasFiles(e))return;dragDepth++;document.body.classList.add('dragging')});
+document.addEventListener('dragleave',e=>{if(!hasFiles(e))return;if(--dragDepth<=0){dragDepth=0;document.body.classList.remove('dragging')}});
+document.addEventListener('dragover',e=>{
+  if(!hasFiles(e))return; e.preventDefault();
+  const z=e.target.closest('.dropzone,[data-doctab]');
+  document.querySelectorAll('.dz-over').forEach(el=>el!==z&&el.classList.remove('dz-over'));
+  if(z){z.classList.add('dz-over');e.dataTransfer.dropEffect='copy'} else e.dataTransfer.dropEffect='none';
+});
+document.addEventListener('drop',e=>{
+  if(!hasFiles(e))return; e.preventDefault(); dragDepth=0;
+  document.body.classList.remove('dragging'); document.querySelectorAll('.dz-over').forEach(el=>el.classList.remove('dz-over'));
+  const tab=e.target.closest('[data-doctab]'), zone=e.target.closest('.dropzone');
+  if(!tab&&!zone){ if(document.querySelector('.dropzone')) toast('PDF bitte auf „Unterlagen zum Objekt“ ziehen',1); return; }
+  const k=kById(document.querySelector('[data-dropzone]').dataset.dropzone);
+  addDocs(k,[...e.dataTransfer.files],tab?tab.dataset.doctab:docTab);
+});
+document.addEventListener('change',e=>{
+  const inp=e.target.closest('[data-docinput]'); if(!inp) return;
+  addDocs(kById(inp.dataset.docinput),[...inp.files],docTab); inp.value='';
+});
+
 /* ---------- Modals ---------- */
 function modal(title,body,foot){
   document.getElementById('layer').innerHTML=`<div class="overlay" data-action="closebg"><div class="modal" role="dialog" aria-modal="true"><div class="modal-h"><h2>${title}</h2><button class="btn btn-ghost btn-icon" data-action="close" aria-label="Schliessen">${ic('x')}</button></div>
@@ -1170,7 +1305,7 @@ const A={
     if(v.folge&&k.periode){const n={...k,id:state.nextId++,frist:addYears(v.datum,perJ(k.periode)),termin:'',zeit:'',dringend:0,bem1:'',bem2:'',fristHist:[],log:[{t:'new',d:toISO(TODAY),txt:`Folgekontrolle aus Kontrolle vom ${fd(v.datum)} erzeugt`}]};state.open.push(n);msg+=` · Folgekontrolle ${parse(n.frist).getFullYear()} angelegt`}
     closeModal();toast(msg);location.hash='#/kontrollen'},
 };
-Object.assign(A,AUTH_ACTIONS);
+Object.assign(A,AUTH_ACTIONS,DOC_ACTIONS);
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-action]'); if(!el) return;
   if(el.dataset.action==='fakt') return; // via change-Event
