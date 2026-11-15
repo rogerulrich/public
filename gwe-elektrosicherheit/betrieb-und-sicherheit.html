@@ -40,6 +40,11 @@ header nav a:hover{background:var(--line-2)}
 .hero h1{font-size:56px;font-weight:800;max-width:900px}
 .hero h1 span{color:var(--red)}
 .hero .lead{font-size:22px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:56px;align-items:center}
+.qrcard{padding:22px;text-align:center}
+.qrcard .qr{width:100%;height:auto;display:block;background:#fff}
+.qrcard b{display:block;margin-top:16px;font-size:17px}
+.qrcard small{display:block;color:var(--muted);font-size:13px;margin-top:4px;overflow-wrap:anywhere}
 .pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
 .pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:30px;padding:9px 16px;font-weight:600;font-size:15px;box-shadow:var(--sh)}
 .pill svg{color:var(--ok)}
@@ -107,6 +112,8 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:14px}
 
 /* Responsive */
 @media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr;gap:32px}
+  .qrcard{max-width:260px}
   .steps{grid-template-columns:repeat(2,1fr)}
   .grid3{grid-template-columns:repeat(2,1fr)}
   .closing{grid-template-columns:1fr}
@@ -149,7 +156,8 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:14px}
 </header>
 
 <div class="hero">
-  <div class="wrap">
+  <div class="wrap hero-grid">
+  <div>
     <span class="eyebrow">Kontroll-App · Betrieb in der Cloud</span>
     <h1>Ihre Daten: <span>sicher verschlüsselt</span>, in der Schweiz gespeichert, überall verfügbar.</h1>
     <p class="lead">So wird die Kontroll-App im produktiven Betrieb aufgesetzt: im Büro und unterwegs auf dem Smartphone erreichbar, ohne dass die Daten ungeschützt im Internet liegen.</p>
@@ -159,6 +167,13 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:14px}
       <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3-1 6-3 8M8 7.5A5 5 0 0 1 17 11c0 2 0 4-1 6M4.5 13c.5-1 .5-2 .5-2a7 7 0 0 1 12-5M12 15c0 2-.5 4-1.5 5.5"/></svg>Login mit Fingerabdruck</span>
       <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>Tägliche Sicherung</span>
     </div>
+  </div>
+  <a class="card qrcard" href="https://rogerulrich.github.io/public/gwe-elektrosicherheit/" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" class="qr"><title>QR-Code zum Prototyp</title><path stroke="#1d2125" d="M0 0.5h7m4 0h3m4 0h3m1 0h2m2 0h7m-33 1h1m5 0h1m2 0h8m3 0h1m3 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m2 0h2m2 0h1m2 0h6m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h2m1 0h1m2 0h1m4 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h6m1 0h1m1 0h1m1 0h5m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h2m2 0h4m2 0h1m2 0h2m3 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h2m1 0h1m2 0h2m5 0h2m-23 1h1m1 0h5m2 0h7m1 0h1m1 0h1m2 0h1m3 0h5m-30 1h1m2 0h2m1 0h6m1 0h1m1 0h1m2 0h3m1 0h1m2 0h2m1 0h2m1 0h1m-30 1h1m2 0h1m2 0h1m1 0h2m2 0h4m2 0h2m2 0h1m2 0h1m1 0h2m-31 1h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h2m2 0h4m3 0h2m1 0h3m1 0h1m-33 1h2m1 0h1m2 0h3m1 0h1m1 0h1m4 0h1m1 0h1m2 0h1m1 0h2m2 0h2m-29 1h4m2 0h2m3 0h4m2 0h3m1 0h2m2 0h1m2 0h1m1 0h2m-33 1h2m1 0h2m1 0h1m1 0h1m1 0h2m1 0h4m3 0h3m1 0h3m1 0h1m1 0h2m-32 1h5m2 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m1 0h1m3 0h2m2 0h2m-30 1h1m2 0h4m1 0h1m1 0h3m3 0h1m4 0h4m1 0h2m3 0h1m-32 1h2m1 0h2m3 0h2m2 0h1m2 0h4m1 0h3m1 0h3m1 0h2m1 0h1m-32 1h1m1 0h2m1 0h2m2 0h1m1 0h4m2 0h1m6 0h1m1 0h2m1 0h2m-32 1h2m3 0h1m1 0h1m4 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h1m1 0h5m-32 1h2m1 0h1m1 0h2m3 0h1m1 0h1m4 0h1m1 0h1m2 0h1m1 0h1m2 0h3m1 0h1m-32 1h1m3 0h1m2 0h5m2 0h1m2 0h5m1 0h1m2 0h1m5 0h1m-33 1h1m1 0h1m3 0h3m2 0h3m1 0h1m2 0h1m1 0h1m7 0h4m-32 1h1m3 0h1m2 0h1m1 0h3m3 0h2m1 0h1m2 0h1m4 0h1m1 0h5m-33 1h1m2 0h6m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h5m3 0h1m-25 1h2m3 0h1m5 0h2m3 0h1m3 0h1m1 0h3m-33 1h7m2 0h4m2 0h1m4 0h1m1 0h3m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h1m1 0h4m5 0h1m1 0h4m3 0h3m-31 1h1m1 0h3m1 0h1m1 0h1m4 0h5m4 0h1m1 0h6m-30 1h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h2m1 0h1m2 0h1m1 0h3m-33 1h1m1 0h3m1 0h1m1 0h5m2 0h2m3 0h2m1 0h1m2 0h2m1 0h1m-30 1h1m5 0h1m2 0h2m1 0h1m2 0h1m3 0h1m1 0h2m2 0h2m1 0h1m1 0h1m-31 1h7m1 0h3m1 0h1m4 0h1m4 0h4m1 0h1m3 0h1"/></svg>
+
+    <b>Prototyp auf dem Handy</b>
+    <small>QR-Code scannen oder<br>rogerulrich.github.io/<wbr>public/<wbr>gwe-elektrosicherheit</small>
+  </a>
   </div>
 </div>
 
