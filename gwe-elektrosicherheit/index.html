@@ -343,15 +343,17 @@ const ic=(n,extra='')=>`<svg class="i" viewBox="0 0 24 24" ${extra}>${IC[n]}</sv
 
 /* ---------- Stammdaten (aus Excel abgeleitet) ---------- */
 const ARTEN=[
-  {code:'PK',name:'Periodische Kontrolle',period:20,pauschale:370,cls:'b-grey'},
-  {code:'AK',name:'Abnahmekontrolle',period:5,pauschale:520,cls:'b-blue'},
+  {code:'PK',name:'Periodische Kontrolle',period:'20',pauschale:370,cls:'b-grey'},
+  {code:'AK',name:'Abnahmekontrolle',period:'5',pauschale:520,cls:'b-blue'},
   {code:'SK',name:'Schlusskontrolle',period:null,pauschale:450,cls:'b-violet'},
   {code:'HÄ',name:'Handänderung',period:null,pauschale:370,cls:'b-warn'},
-  {code:'GP',name:'Geräteprüfung',period:1,pauschale:null,cls:'b-teal'},
+  {code:'GP',name:'Geräteprüfung',period:'GP',pauschale:null,cls:'b-teal'},
 ];
 const ART=c=>ARTEN.find(a=>a.code===c)||ARTEN[0];
-const OBJEKTE=['EFH','2FH','MFH','Wohnung','Stall','Gewerbe','Werkstatt','Restaurant','Hotel','Tankstelle','Schulhaus','Ferienhaus','Neubau EFH'];
-const PERIODEN=[1,2,5,10,20];
+const OBJEKTE=['EFH','Zweifamilienhaus','MFH','DEFH','Stall','Gewerbe','Wohn- & Geschäftshaus','Hotel','Alters- & Pflegezentrum'];
+const PERIODEN=[['1','Jährlich',1],['3','3 Jahre',3],['5','5 Jahre',5],['5S','5 Jahre SCHIII',5],['10','10 Jahre',10],['20','20 Jahre',20],['GP','Geräteprüfung',1]];
+const perJ=p=>(PERIODEN.find(x=>x[0]===String(p))||[])[2]||0;
+const perL=p=>(PERIODEN.find(x=>x[0]===String(p))||[])[1]||'–';
 const KONTROLLEURE=[{id:'livio',name:'Livio',kurz:'LI',color:'#DA291C'},{id:'lukas',name:'Lukas',kurz:'LU',color:'#3B4A5C'}];
 const KT=id=>KONTROLLEURE.find(k=>k.id===id)||{name:'–',kurz:'?',color:'#999'};
 const STUNDENANSATZ=130;
@@ -381,7 +383,7 @@ function seed(){
   const rows=[
     ['PK','GO40000587','Gewerbe Autowerkstatt','Breiteli 22',6472,'Breiteli AG, Eyrütti 15, 6467 Schattdorf','041 880 00 55','','Aktuelle SiNa liegt im Mail','Evtl. Beleuchtungsersatz im Herbst, dann gemeinsam kontrollieren','livio',-280,null,'',2,'Aufwand',5,3,''],
     ['PK','6400004925','EFH','Höfligasse 11',6460,'Familie Muster-Arnold, Höfligasse 11, 6460 Altdorf','079 123 00 67','','','','lukas',24,0,'08:30',0,370,20,2,''],
-    ['PK','6500002215','MFH 6 Wohnungen','Gotthardstrasse 22',6472,'Einwohnergemeinde Erstfeld, Gotthardstrasse 66','041 882 00 00','Hauswart P. Bissig 041 874 00 45','Hauswart vorgängig informieren','','livio',54,1,'10:00',0,'Aufwand',20,4,'2026-1498'],
+    ['PK','6500002215','MFH','Gotthardstrasse 22',6472,'Einwohnergemeinde Erstfeld, Gotthardstrasse 66','041 882 00 00','Hauswart P. Bissig 041 874 00 45','Hauswart vorgängig informieren','','livio',54,1,'10:00',0,'Aufwand',20,4,'2026-1498'],
     ['PK','6400002482','Stall','Birtschen 10',6472,'Erika Imhof, Birtschen 10, 6472 Erstfeld','078 814 00 99','','','Meldet sich im Januar','lukas',85,null,'',0,280,10,1.5,''],
     ['AK','GO40000924','Gewerbetrakt','Dätwylerstrasse 15',6460,'Muster Immobilien AG, Postfach, 6460 Altdorf','041 870 00 11','','Abnahmekontrolle nach Umbau','Elektro Planzer','livio',12,3,'13:30',1,520,5,3,'2026-1512'],
     ['PK','6500005752 ZEV','2FH','Reussstrasse 55',6467,'Peter und Anna Zgraggen','079 721 00 49','Mieter EG: 079 508 00 31','Evtl. mit Coiffeur verbinden','','livio',-12,null,'',2,370,20,2,''],
@@ -398,7 +400,7 @@ function seed(){
     ['PK','6400008844','Werkstatt','Industriestrasse 9',6468,'Schreinerei Arnold','041 870 33 00','','','Offeriert','livio',85,13,'09:30',0,380,10,2.5,''],
     ['PK','6400005511','EFH','Dorfstrasse 7',6465,'Josef Arnold','041 879 00 18','','Bis 19.11. in den Ferien','','lukas',24,null,'',0,370,20,2,''],
     ['PK','6400009901','Stall','Ried 3',6466,'Hans Baumann','079 555 00 21','','','','livio',-40,null,'',1,280,10,1.5,''],
-    ['AK','6500012001','Neubau EFH','Feldweg 5',6467,'Bau Uri AG','041 871 00 00','Bauleiter: 079 640 00 10','Abnahme nach Fertigstellung','','lukas',27,1,'15:00',0,520,20,3,'2026-1544'],
+    ['AK','6500012001','EFH','Feldweg 5',6467,'Bau Uri AG','041 871 00 00','Bauleiter: 079 640 00 10','Abnahme nach Fertigstellung','','lukas',27,1,'15:00',0,520,20,3,'2026-1544'],
     ['PK','6400002229','Ferienhaus','Seestrasse 1',6377,'Familie Truttmann','041 820 00 44','','','','livio',236,null,'',0,370,20,2,''],
     ['PK','6400004470','Wohnung 2.OG','Bahnhofstrasse 14',6454,'R. Furrer','079 222 00 33','','','','lukas',61,null,'',0,280,20,1.5,''],
     ['PK','6400003318','Gewerbe','Kantonsstrasse 2',6484,'Garage Wassen AG','041 885 00 90','','','','livio',19,null,'',1,'Aufwand',5,3,''],
@@ -408,7 +410,7 @@ function seed(){
   const open=rows.map((r,i)=>{
     const [art,zaehler,objekt,adresse,plz,eig,telEig,telMieter,bem1,bem2,kt,fr,te,zeit,dr,abr,per,h,proj]=r;
     const k={id:id++,nr:i+1,art,zaehler,objekt,adresse,plz:String(plz),ort:(PLZ.find(p=>p[0]===plz)||[0,''])[1],eigentuemer:eig,rechnungsadresse:'',telEig,telMieter,bem1,bem2,projekt:proj,
-      kontrolleur:kt,frist:fr<0?addDays(fr):monthEnd(Math.max(0,Math.round(fr/30))) ,termin:te===null?'':addDays(te),zeit,dringend:dr,abrechnung:abr==='Aufwand'?'aufwand':'pauschal',pauschale:abr==='Aufwand'?'':abr,periode:per,aufwandH:h,
+      kontrolleur:kt,frist:fr<0?addDays(fr):monthEnd(Math.max(0,Math.round(fr/30))) ,termin:te===null?'':addDays(te),zeit,dringend:dr,abrechnung:abr==='Aufwand'?'aufwand':'pauschal',pauschale:abr==='Aufwand'?'':abr,periode:per==null?null:String(per),aufwandH:h,
       log:[{t:'new',d:addDays(-60-i*3),txt:'Kontrolle erfasst (Aufgebot Netzbetreiber)'}],fristHist:[]};
     if(fr<0) k.frist=addDays(fr);
     if(te!==null) k.log.push({t:'termin',d:addDays(Math.min(te,0)-5),txt:`Termin vereinbart: ${fdw(k.termin)} ${zeit}`});
@@ -669,7 +671,7 @@ function updateList(){
 /* ---------- Detail / Erfassen ---------- */
 function vDetail(id){
   const isNew=id===null;
-  const k=isNew?{id:null,art:'PK',zaehler:'',objekt:'',adresse:'',plz:'',ort:'',eigentuemer:'',rechnungsadresse:'',telEig:'',telMieter:'',bem1:'',bem2:'',projekt:'',kontrolleur:'livio',frist:monthEnd(3),termin:'',zeit:'',dringend:0,abrechnung:'pauschal',pauschale:370,periode:20,aufwandH:2,log:[],fristHist:[]}:state.open.find(x=>x.id===id);
+  const k=isNew?{id:null,art:'PK',zaehler:'',objekt:'',adresse:'',plz:'',ort:'',eigentuemer:'',rechnungsadresse:'',telEig:'',telMieter:'',bem1:'',bem2:'',projekt:'',kontrolleur:'livio',frist:monthEnd(3),termin:'',zeit:'',dringend:0,abrechnung:'pauschal',pauschale:370,periode:'20',aufwandH:2,log:[],fristHist:[]}:state.open.find(x=>x.id===id);
   if(!k) return `<a class="back" href="#/kontrollen">${ic('left')}Zurück</a><div class="card empty" style="margin-top:16px">Diese Kontrolle ist nicht mehr offen (evtl. bereits als durchgeführt gemeldet).</div>`;
   const opt=(arr,val)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(val)===String(v)?'selected':''}>${esc(l)}</option>`).join('');
   const f=(name,label,inner,cls='')=>`<div class="field ${cls}"><label for="f_${name}">${label}</label>${inner}</div>`;
@@ -691,7 +693,7 @@ function vDetail(id){
     <div class="grid" style="gap:18px">
       <div class="card"><div class="card-h"><h2>Kontrolle</h2></div><div class="card-b form-grid">
         ${f('art','Kontrollart',`<select class="sel" id="f_art" name="art" data-recalc>${opt(ARTEN.map(a=>[a.code,a.code+' – '+a.name]),k.art)}</select>`)}
-        ${f('periode','Periodizität',`<select class="sel" id="f_periode" name="periode">${opt([['','–'],...PERIODEN.map(p=>[p,p+(p===1?' Jahr':' Jahre')])],k.periode??'')}</select>`)}
+        ${f('periode','Periodizität',`<select class="sel" id="f_periode" name="periode">${opt([['','–'],...PERIODEN.map(([v,l])=>[v,l])],k.periode??'')}</select>`)}
         ${f('frist','Frist <span class="req">*</span>',inp('frist',k.frist,'date','required'))}
         ${f('kontrolleur','Durchgeführt von',`<select class="sel" id="f_kontrolleur" name="kontrolleur">${opt(KONTROLLEURE.map(x=>[x.id,x.name]),k.kontrolleur)}</select>`)}
         ${f('dringend','Dringlichkeit',`<select class="sel" id="f_dringend" name="dringend">${opt([[0,'normal'],[1,'dringend (x)'],[2,'sehr dringend (xxx)']],k.dringend)}</select>`)}
@@ -701,7 +703,7 @@ function vDetail(id){
         ${f('adresse','Adresse <span class="req">*</span>',inp('adresse',k.adresse,'text','required placeholder="Strasse Nr."')+(isNew?'':`<div class="map-links"><span class="small muted" style="align-self:center">Auf Karte zeigen:</span><a class="btn" href="${mapUrl(k)}" target="_blank" rel="noopener">${ic('pin')}Google Maps</a><button class="btn" type="button" data-action="geour" data-id="${k.id}">${ic('map')}geo.ur.ch</button></div>`),'full')}
         ${f('plz','PLZ',inp('plz',k.plz,'text','inputmode="numeric" list="plzlist" data-plz placeholder="z.B. 6472"'))}
         ${f('ort','Ort <span class="req">*</span>',inp('ort',k.ort,'text','required'))}
-        ${f('objekt','Objekt',inp('objekt',k.objekt,'text','list="objlist" placeholder="EFH, MFH, Stall …"'))}
+        ${f('objekt','Objekt',`<select class="sel" id="f_objekt" name="objekt">${opt([['','–'],...(k.objekt&&!OBJEKTE.includes(k.objekt)?[[k.objekt,k.objekt]]:[]),...OBJEKTE.map(o=>[o,o])],k.objekt||'')}</select>`)}
         ${f('zaehler','Zählernummer',inp('zaehler',k.zaehler))}
       </div></div>
       <div class="card"><div class="card-h"><h2>Kontakte</h2></div><div class="card-b form-grid">
@@ -737,14 +739,13 @@ function vDetail(id){
   </div>
   <div class="sticky-save"><a class="btn" href="#/kontrollen">Abbrechen</a><button class="btn btn-primary" data-action="save">${ic('check')}${isNew?'Kontrolle anlegen':'Änderungen speichern'}</button></div>
   </form>
-  <datalist id="plzlist">${PLZ.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('')}</datalist>
-  <datalist id="objlist">${OBJEKTE.map(o=>`<option value="${o}">`).join('')}</datalist>`;
+  <datalist id="plzlist">${PLZ.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('')}</datalist>`;
 }
 function saveForm(){
   const form=document.getElementById('kform');
   const data=Object.fromEntries(new FormData(form));
   for(const r of ['adresse','ort','frist']) if(!data[r]){ const el=form.querySelector(`[name=${r}]`); el.focus(); el.style.borderColor='var(--red)'; toast('Bitte Pflichtfelder ausfüllen',true); return; }
-  data.dringend=+data.dringend; data.periode=data.periode?+data.periode:null; data.aufwandH=+data.aufwandH||0;
+  data.dringend=+data.dringend; data.periode=data.periode||null; data.aufwandH=+data.aufwandH||0;
   if(form.dataset.id){
     const k=state.open.find(x=>x.id===+form.dataset.id);
     const terminChanged=k.termin!==data.termin||k.zeit!==data.zeit;
@@ -855,7 +856,7 @@ function vAuswertung(){
 function vStamm(){
   const tabs=[['arten','Kontrollarten'],['objekte','Objekttypen'],['plz','Gemeinden / PLZ'],['kt','Kontrolleure'],['tarif','Tarife']];
   let body='';
-  if(ui.stamm==='arten') body=`<table class="t"><thead><tr><th class="ns">Kürzel</th><th class="ns">Bezeichnung</th><th class="ns">Std.-Periodizität</th><th class="ns" style="text-align:right">Std.-Pauschale</th></tr></thead><tbody>${ARTEN.map(a=>`<tr style="cursor:default"><td>${artTag(a.code)}</td><td>${a.name}</td><td>${a.period?a.period+' Jahre':'–'}</td><td style="text-align:right">${a.pauschale?chf(a.pauschale):'nach Aufwand'}</td></tr>`).join('')}</tbody></table>`;
+  if(ui.stamm==='arten') body=`<table class="t"><thead><tr><th class="ns">Kürzel</th><th class="ns">Bezeichnung</th><th class="ns">Std.-Periodizität</th><th class="ns" style="text-align:right">Std.-Pauschale</th></tr></thead><tbody>${ARTEN.map(a=>`<tr style="cursor:default"><td>${artTag(a.code)}</td><td>${a.name}</td><td>${perL(a.period)}</td><td style="text-align:right">${a.pauschale?chf(a.pauschale):'nach Aufwand'}</td></tr>`).join('')}</tbody></table>`;
   if(ui.stamm==='objekte') body=`<div class="card-b chips">${OBJEKTE.map(o=>`<span class="chip">${o}</span>`).join('')}</div>`;
   if(ui.stamm==='plz') body=`<table class="t"><thead><tr><th class="ns">PLZ</th><th class="ns">Gemeinde</th><th class="ns">Offene Kontrollen</th></tr></thead><tbody>${PLZ.slice().sort((a,b)=>a[1].localeCompare(b[1])).map(p=>`<tr style="cursor:default"><td>${p[0]}</td><td>${p[1]}</td><td>${state.open.filter(k=>k.ort===p[1]).length||'–'}</td></tr>`).join('')}</tbody></table>`;
   if(ui.stamm==='kt') body=`<table class="t"><thead><tr><th class="ns">Name</th><th class="ns">Kürzel</th><th class="ns">Rolle</th><th class="ns">Offen</th></tr></thead><tbody>${KONTROLLEURE.map(k=>`<tr style="cursor:default"><td>${ktDot(k.id)}</td><td>${k.kurz}</td><td>${k.id==='lukas'?'Administrator':'Kontrolleur'}</td><td>${state.open.filter(x=>x.kontrolleur===k.id).length}</td></tr>`).join('')}</tbody></table>`;
@@ -1132,7 +1133,7 @@ function openModal(m,id){
       `<button class="btn" type="button" data-action="toast" data-msg="Kontrollbericht-PDF in der finalen Version">${ic('doc')}Bericht</button><button class="btn btn-primary" type="button" data-action="close">Schliessen</button>`);
   }
 }
-function folgeText(k,datum){ return k.periode?`Periodizität ${k.periode} Jahre → neue Frist <b>${fd(addYears(datum,k.periode))}</b>`:'Keine Periodizität hinterlegt'; }
+function folgeText(k,datum){ return k.periode?`Periodizität ${perL(k.periode)} → neue Frist <b>${fd(addYears(datum,perJ(k.periode)))}</b>`:'Keine Periodizität hinterlegt'; }
 
 /* ---------- Aktionen ---------- */
 const mval=()=>Object.fromEntries(new FormData(document.getElementById('mform')));
@@ -1166,7 +1167,7 @@ const A={
     state.open=state.open.filter(x=>x!==k);
     state.done.unshift({...k,durchgefuehrt:v.datum,kontrolleur:v.kontrolleur,aufwandH:+v.h,betrag:+v.betrag,kbAn:v.kbAn,sina:v.sina,verrechnet:false});
     let msg='Kontrolle abgeschlossen und archiviert';
-    if(v.folge&&k.periode){const n={...k,id:state.nextId++,frist:addYears(v.datum,k.periode),termin:'',zeit:'',dringend:0,bem1:'',bem2:'',fristHist:[],log:[{t:'new',d:toISO(TODAY),txt:`Folgekontrolle aus Kontrolle vom ${fd(v.datum)} erzeugt`}]};state.open.push(n);msg+=` · Folgekontrolle ${parse(n.frist).getFullYear()} angelegt`}
+    if(v.folge&&k.periode){const n={...k,id:state.nextId++,frist:addYears(v.datum,perJ(k.periode)),termin:'',zeit:'',dringend:0,bem1:'',bem2:'',fristHist:[],log:[{t:'new',d:toISO(TODAY),txt:`Folgekontrolle aus Kontrolle vom ${fd(v.datum)} erzeugt`}]};state.open.push(n);msg+=` · Folgekontrolle ${parse(n.frist).getFullYear()} angelegt`}
     closeModal();toast(msg);location.hash='#/kontrollen'},
 };
 Object.assign(A,AUTH_ACTIONS);
