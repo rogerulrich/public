@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Betrieb & Sicherheit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#DA291C; --red-700:#B01F14; --red-50:#FDF1EF; --red-100:#FADBD7;
+  --ink:#1D2125; --ink-2:#454C55; --muted:#6B737D; --line:#E5E7EA; --line-2:#F0F1F3;
+  --bg:#F5F6F8; --card:#fff;
+  --ok:#17804F; --ok-50:#E6F4EC; --blue:#1F5FD1; --blue-50:#E9F0FD; --slate:#3B4A5C;
+  --r:14px; --sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);
+  --font:"Fira Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.15;letter-spacing:-.01em}
+p{margin:0}
+.wrap{max-width:1160px;margin:0 auto;padding:0 32px}
+section{padding:72px 0}
+.eyebrow{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-bottom:12px}
+h2{font-size:38px;font-weight:800}
+.lead{font-size:20px;color:var(--ink-2);max-width:760px;margin-top:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+
+/* Header */
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+header .wrap{display:flex;align-items:center;gap:24px;height:72px}
+header img{height:38px;width:auto;display:block}
+header nav{margin-left:auto;display:flex;gap:6px}
+header nav a{color:var(--ink-2);text-decoration:none;font-weight:500;font-size:15px;padding:8px 12px;border-radius:8px}
+header nav a:hover{background:var(--line-2)}
+
+/* Hero */
+.hero{background:radial-gradient(900px 500px at 90% 0%,var(--red-50),transparent 70%),#fff;border-bottom:1px solid var(--line);padding:84px 0 76px}
+.hero h1{font-size:56px;font-weight:800;max-width:900px}
+.hero h1 span{color:var(--red)}
+.hero .lead{font-size:22px}
+.pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
+.pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:30px;padding:9px 16px;font-weight:600;font-size:15px;box-shadow:var(--sh)}
+.pill svg{color:var(--ok)}
+
+/* Diagram */
+.diagram{margin-top:40px;padding:28px}
+.diagram svg{width:100%;height:auto;display:block}
+.flow{stroke-dasharray:6 10;animation:flow 1.2s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-32}}
+.packet{animation:pk 3.2s ease-in-out infinite}
+@keyframes pk{0%{transform:translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(250px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.flow,.packet{animation:none}}
+.legend{display:flex;flex-wrap:wrap;gap:22px;margin-top:18px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:26px;height:0;border-top:3px dashed var(--ok)}
+.legend i.g{border-top-style:solid;border-color:#9AA3AD}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:40px;counter-reset:s}
+.step{padding:22px 20px;position:relative}
+.step .n{width:36px;height:36px;border-radius:10px;background:var(--red);color:#fff;font-weight:700;display:grid;place-items:center;margin-bottom:14px}
+.step h3{font-size:18px;margin-bottom:6px}
+.step p{font-size:15px;color:var(--ink-2)}
+
+/* Security grid */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.feat{padding:26px}
+.ic{width:48px;height:48px;border-radius:12px;background:var(--red-50);color:var(--red);display:grid;place-items:center;margin-bottom:16px}
+.ic svg{width:24px;height:24px}
+.feat h3{font-size:20px;margin-bottom:8px}
+.feat p{color:var(--ink-2);font-size:16px}
+.feat ul{margin:12px 0 0;padding:0;list-style:none;font-size:14.5px;color:var(--muted)}
+.feat li{padding:4px 0 4px 22px;position:relative}
+.feat li::before{content:"";position:absolute;left:2px;top:11px;width:10px;height:6px;border-left:2px solid var(--ok);border-bottom:2px solid var(--ok);transform:rotate(-45deg)}
+
+/* Compare */
+.compare{margin-top:40px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:16px 20px;border-bottom:1px solid var(--line-2);vertical-align:top;font-size:16px}
+th{font-size:14px;color:var(--muted);font-weight:600;background:#FAFAFB}
+th.app{color:var(--red)}
+td:first-child{font-weight:600;width:24%}
+td.bad{color:var(--ink-2)}
+td.good{background:var(--ok-50);color:#0F5A37;font-weight:500}
+tr:last-child td{border-bottom:0}
+
+/* FAQ */
+.faq{margin-top:36px;display:grid;gap:12px}
+details{padding:0}
+summary{cursor:pointer;list-style:none;padding:20px 24px;font-weight:600;font-size:18px;display:flex;align-items:center;gap:14px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";margin-left:auto;font-size:26px;font-weight:400;color:var(--red);line-height:1}
+details[open] summary::after{content:"–"}
+details .a{padding:0 24px 22px 24px;color:var(--ink-2);max-width:900px}
+
+/* Closing */
+.closing{background:var(--ink);color:#fff;border-radius:20px;padding:48px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center}
+.closing h2{color:#fff}
+.closing p{color:#C9CED4;font-size:18px;margin-top:12px}
+.closing ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.closing li{display:flex;gap:12px;align-items:flex-start;font-size:17px}
+.closing li b{color:#fff}
+.chk{flex:none;width:24px;height:24px;border-radius:50%;background:var(--red);display:grid;place-items:center;margin-top:1px}
+footer{padding:36px 0 48px;color:var(--muted);font-size:14px}
+
+/* Responsive */
+@media (max-width:980px){
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .grid3{grid-template-columns:repeat(2,1fr)}
+  .closing{grid-template-columns:1fr}
+  header nav{display:none}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  section{padding:52px 0}
+  .hero{padding:52px 0}
+  .hero h1{font-size:36px}
+  .hero .lead,.lead{font-size:18px}
+  h2{font-size:28px}
+  .steps,.grid3{grid-template-columns:1fr}
+  .diagram{padding:12px}
+  .closing{padding:28px}
+  th,td{padding:12px;font-size:14px}
+  td:first-child{width:auto}
+}
+@media print{
+  header{position:static}
+  .flow,.packet{animation:none}
+  section{padding:36px 0;break-inside:avoid}
+  details{break-inside:avoid}
+  details .a{display:block}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <img src="data:image/png;base64,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" alt="GWE Elektrosicherheit">
+    <nav>
+      <a href="#aufbau">Aufbau</a>
+      <a href="#sicherheit">Sicherheit</a>
+      <a href="#vergleich">Vergleich</a>
+      <a href="#fragen">Fragen</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Kontroll-App · Betrieb in der Cloud</span>
+    <h1>Ihre Daten: <span>sicher verschlüsselt</span>, in der Schweiz gespeichert, überall verfügbar.</h1>
+    <p class="lead">So wird die Kontroll-App im produktiven Betrieb aufgesetzt: im Büro und unterwegs auf dem Smartphone erreichbar, ohne dass die Daten ungeschützt im Internet liegen.</p>
+    <div class="pills">
+      <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Durchgehend verschlüsselt</span>
+      <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Rechenzentrum in der Schweiz</span>
+      <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3-1 6-3 8M8 7.5A5 5 0 0 1 17 11c0 2 0 4-1 6M4.5 13c.5-1 .5-2 .5-2a7 7 0 0 1 12-5M12 15c0 2-.5 4-1.5 5.5"/></svg>Login mit Fingerabdruck</span>
+      <span class="pill"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>Tägliche Sicherung</span>
+    </div>
+  </div>
+</div>
+
+<!-- AUFBAU -->
+<section id="aufbau">
+  <div class="wrap">
+    <span class="eyebrow">Aufbau</span>
+    <h2>So ist die Umgebung aufgebaut</h2>
+    <p class="lead">Eine einzige Anwendung auf einem eigenen Server beim Schweizer Anbieter Infomaniak. Alle Geräte verbinden sich ausschliesslich verschlüsselt mit ihrer eigenen Adresse <b>kontrollen.gwe-elektrosicherheit.ch</b>.</p>
+
+    <div class="card diagram">
+      <svg viewBox="0 0 1100 560" role="img" aria-label="Architekturdiagramm: Geräte verbinden sich verschlüsselt mit dem Server im Schweizer Rechenzentrum; nächtliche verschlüsselte Sicherung an zweiten Standort">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#17804F"/></marker>
+          <marker id="arg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9AA3AD"/></marker>
+          <symbol id="lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" fill="#17804F"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#17804F" stroke-width="2.6"/></symbol>
+        </defs>
+        <style>
+          .t{font-family:"Fira Sans",system-ui,sans-serif;fill:#1D2125}
+          .h{font-weight:700;font-size:17px}
+          .s{font-size:13.5px;fill:#6B737D}
+          .lab{font-size:12px;font-weight:700;letter-spacing:.08em;fill:#6B737D}
+        </style>
+
+        <!-- Geräte -->
+        <text class="t lab" x="20" y="28">IHRE GERÄTE</text>
+        <g>
+          <rect x="20" y="50" width="220" height="100" rx="14" fill="#fff" stroke="#E5E7EA" stroke-width="1.5"/>
+          <rect x="40" y="76" width="44" height="30" rx="4" fill="none" stroke="#3B4A5C" stroke-width="2.4"/><path d="M52 116h20M62 106v10" stroke="#3B4A5C" stroke-width="2.4"/>
+          <text class="t h" x="100" y="92">Büro-PC</text><text class="t s" x="100" y="113">Browser</text>
+        </g>
+        <g>
+          <rect x="20" y="170" width="220" height="100" rx="14" fill="#fff" stroke="#E5E7EA" stroke-width="1.5"/>
+          <rect x="48" y="190" width="28" height="48" rx="6" fill="none" stroke="#3B4A5C" stroke-width="2.4"/><circle cx="62" cy="231" r="2" fill="#3B4A5C"/>
+          <text class="t h" x="100" y="212">Smartphone</text><text class="t s" x="100" y="233">Lukas · Web-App</text>
+        </g>
+        <g>
+          <rect x="20" y="290" width="220" height="100" rx="14" fill="#fff" stroke="#E5E7EA" stroke-width="1.5"/>
+          <rect x="48" y="310" width="28" height="48" rx="6" fill="none" stroke="#3B4A5C" stroke-width="2.4"/><circle cx="62" cy="351" r="2" fill="#3B4A5C"/>
+          <text class="t h" x="100" y="332">Smartphone</text><text class="t s" x="100" y="353">Livio · Web-App</text>
+        </g>
+
+        <!-- Kanal -->
+        <path class="flow" d="M240 100 C300 100 300 220 380 220" fill="none" stroke="#17804F" stroke-width="3"/>
+        <path class="flow" d="M240 220 L380 220" fill="none" stroke="#17804F" stroke-width="3"/>
+        <path class="flow" d="M240 340 C300 340 300 220 380 220" fill="none" stroke="#17804F" stroke-width="3"/>
+        <rect x="262" y="400" width="150" height="56" rx="10" fill="#E6F4EC"/>
+        <use href="#lock" x="274" y="412" width="22" height="22"/>
+        <text class="t" x="304" y="425" style="font-weight:700;font-size:14px;fill:#0F5A37">HTTPS / TLS</text>
+        <text class="t" x="304" y="443" style="font-size:12.5px;fill:#0F5A37">verschlüsselt</text>
+        <path d="M337 400 L337 236" stroke="#17804F" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <g class="packet"><use href="#lock" x="245" y="208" width="24" height="24"/></g>
+
+        <!-- Rechenzentrum -->
+        <rect x="380" y="40" width="700" height="370" rx="18" fill="#FDF1EF" stroke="#FADBD7" stroke-width="2"/>
+        <text class="t lab" x="404" y="70" style="fill:#B01F14">INFOMANIAK · RECHENZENTRUM SCHWEIZ · LINUX-SERVER</text>
+        <!-- Swiss flag -->
+        <rect x="1036" y="54" width="24" height="24" rx="4" fill="#DA291C"/><path d="M1048 59v14M1041 66h14" stroke="#fff" stroke-width="4"/>
+
+        <!-- Firewall -->
+        <rect x="400" y="110" width="40" height="230" rx="8" fill="#DA291C"/>
+        <text class="t" transform="translate(426 225) rotate(-90)" text-anchor="middle" style="fill:#fff;font-weight:700;font-size:14px;letter-spacing:.06em">FIREWALL</text>
+
+        <path d="M440 220 L478 220" stroke="#17804F" stroke-width="3" marker-end="url(#ar)"/>
+        <rect x="480" y="160" width="170" height="120" rx="14" fill="#fff" stroke="#E5E7EA" stroke-width="1.5"/>
+        <text class="t h" x="498" y="196">Webserver</text>
+        <text class="t s" x="498" y="218">Zertifikat, Schutz-</text>
+        <text class="t s" x="498" y="236">regeln, Login-Bremse</text>
+        <text class="t s" x="498" y="262" style="fill:#17804F;font-weight:600">nur HTTPS erreichbar</text>
+
+        <path d="M650 220 L688 220" stroke="#9AA3AD" stroke-width="3" marker-end="url(#arg)"/>
+        <rect x="690" y="130" width="180" height="180" rx="14" fill="#fff" stroke="#DA291C" stroke-width="2"/>
+        <text class="t h" x="708" y="166" style="fill:#DA291C">Kontroll-App</text>
+        <text class="t s" x="708" y="190">Anmeldung & Passkeys</text>
+        <text class="t s" x="708" y="210">Rollen & Rechte</text>
+        <text class="t s" x="708" y="230">Prüft jede Anfrage</text>
+        <text class="t s" x="708" y="250">Verlauf / Protokoll</text>
+        <text class="t s" x="708" y="284" style="fill:#3B4A5C;font-weight:600">eigener Dienst-Benutzer</text>
+
+        <path d="M870 220 L908 220" stroke="#9AA3AD" stroke-width="3" marker-end="url(#arg)"/>
+        <!-- DB cylinder -->
+        <g>
+          <path d="M912 150 v130 a70 18 0 0 0 140 0 v-130" fill="#fff" stroke="#3B4A5C" stroke-width="2"/>
+          <ellipse cx="982" cy="150" rx="70" ry="18" fill="#fff" stroke="#3B4A5C" stroke-width="2"/>
+          <text class="t h" x="982" y="208" text-anchor="middle">Datenbank</text>
+          <text class="t s" x="982" y="230" text-anchor="middle">Kontrollen</text>
+          <text class="t s" x="982" y="248" text-anchor="middle">PDF-Unterlagen</text>
+          <text class="t s" x="982" y="266" text-anchor="middle">Benutzer</text>
+        </g>
+        <text class="t s" x="982" y="330" text-anchor="middle" style="font-size:12.5px">kein direkter Zugriff</text>
+        <text class="t s" x="982" y="346" text-anchor="middle" style="font-size:12.5px">von aussen</text>
+
+        <!-- Backup -->
+        <path d="M982 352 L982 372" stroke="#9AA3AD" stroke-width="2"/>
+        <path class="flow" d="M982 410 L982 470" fill="none" stroke="#17804F" stroke-width="3" marker-end="url(#ar)"/>
+        <rect x="640" y="372" width="280" height="30" rx="8" fill="#fff" stroke="#E5E7EA"/>
+        <text class="t" x="656" y="392" style="font-size:13.5px;font-weight:600">Nächtliche Sicherung · 30 Tage</text>
+        <path d="M920 387 L982 387" stroke="#9AA3AD" stroke-width="2"/>
+
+        <rect x="830" y="475" width="250" height="70" rx="14" fill="#fff" stroke="#E5E7EA" stroke-width="1.5"/>
+        <use href="#lock" x="846" y="498" width="22" height="22"/>
+        <text class="t h" x="878" y="505">Zweiter Standort</text>
+        <text class="t s" x="878" y="526">verschlüsselte Kopie</text>
+        <text class="t s" x="20" y="470" style="font-size:14px">Externe Kartendienste (geo.ur.ch, Google Maps) werden</text>
+        <text class="t s" x="20" y="490" style="font-size:14px">nur als Link geöffnet. Dabei werden keine Kundendaten</text>
+        <text class="t s" x="20" y="510" style="font-size:14px">aus der App weitergegeben, nur die Adresse für die Karte.</text>
+      </svg>
+      <div class="legend">
+        <span><i></i>verschlüsselte Verbindung</span>
+        <span><i class="g"></i>intern auf dem Server, von aussen nicht erreichbar</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WEG EINER ANFRAGE -->
+<section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <span class="eyebrow">Ablauf</span>
+    <h2>Was passiert, wenn Lukas unterwegs eine Kontrolle öffnet?</h2>
+    <div class="steps">
+      <div class="card step"><div class="n">1</div><h3>Anmelden</h3><p>Fingerabdruck auf dem Smartphone. Der Fingerabdruck selbst verlässt das Gerät nie.</p></div>
+      <div class="card step"><div class="n">2</div><h3>Verschlüsselt senden</h3><p>Die Anfrage reist verschlüsselt über HTTPS, auch im öffentlichen WLAN oder Mobilfunknetz.</p></div>
+      <div class="card step"><div class="n">3</div><h3>Berechtigung prüfen</h3><p>Der Server prüft bei jeder Anfrage: Wer ist das? Darf diese Person das sehen?</p></div>
+      <div class="card step"><div class="n">4</div><h3>Daten liefern</h3><p>Nur die angefragten Daten werden zurückgeschickt, wieder verschlüsselt.</p></div>
+      <div class="card step"><div class="n">5</div><h3>Nachvollziehen</h3><p>Änderungen werden mit Benutzer und Zeitpunkt im Verlauf festgehalten.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SICHERHEIT -->
+<section id="sicherheit">
+  <div class="wrap">
+    <span class="eyebrow">Sicherheit</span>
+    <h2>Sechs Schutzschichten für Ihre Daten</h2>
+    <p class="lead">Sicherheit entsteht nicht durch eine einzelne Massnahme, sondern durch mehrere Schichten, die sich ergänzen.</p>
+    <div class="grid3">
+      <div class="card feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>Verschlüsselte Kommunikation</h3>
+        <p>Jede Verbindung zwischen Gerät und Server ist verschlüsselt, wie beim E-Banking.</p>
+        <ul><li>HTTPS erzwungen, unverschlüsselt ist kein Zugriff möglich</li><li>Zertifikat erneuert sich automatisch</li><li>Moderne Sicherheits-Header gegen Angriffe aus dem Browser</li></ul>
+      </div>
+      <div class="card feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3-1 6-3 8M8 7.5A5 5 0 0 1 17 11c0 2 0 4-1 6M4.5 13c.5-1 .5-2 .5-2a7 7 0 0 1 12-5M12 15c0 2-.5 4-1.5 5.5"/></svg></div>
+        <h3>Sichere Anmeldung</h3>
+        <p>Fingerabdruck oder Face ID auf dem Smartphone, Passwort am PC.</p>
+        <ul><li>Passkeys: kein Passwort, das gestohlen werden kann</li><li>Sperre nach 5 Fehlversuchen</li><li>Passwörter nur verschlüsselt (gehasht) gespeichert</li></ul>
+      </div>
+      <div class="card feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M17 11l2 2 4-4"/></svg></div>
+        <h3>Rollen & Rechte</h3>
+        <p>Nur Ihre Mitarbeitenden haben ein Konto, und jedes Konto sieht nur, was es braucht.</p>
+        <ul><li>Administrator und Kontrolleure</li><li>Der Server prüft jede Anfrage, nicht nur die Oberfläche</li><li>Konto bei Bedarf sofort sperrbar</li></ul>
+      </div>
+      <div class="card feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v8M8 12h8"/></svg></div>
+        <h3>Daten bleiben in der Schweiz</h3>
+        <p>Server bei Infomaniak in einem Schweizer Rechenzentrum, betrieben nach dem Schweizer Datenschutzgesetz (revDSG).</p>
+        <ul><li>Kein Datentransfer ins Ausland</li><li>Eigener Server, keine geteilte Datenbank mit anderen Kunden</li><li>Daten gehören Ihnen und sind jederzeit exportierbar</li></ul>
+      </div>
+      <div class="card feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Sicherung & Wiederherstellung</h3>
+        <p>Jede Nacht automatisch gesichert, verschlüsselt und an einem zweiten Standort abgelegt.</p>
+        <ul><li>30 Tage zurück wiederherstellbar</li><li>Zusätzliche Sicherung vor jedem Update</li><li>Wiederherstellung vor Go-live getestet</li></ul>
+      </div>
+      <div class="card feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14l3-3 3 2 4-5"/><path d="M8 21h8"/></svg></div>
+        <h3>Gehärteter, überwachter Server</h3>
+        <p>Der Server ist bewusst schlank gehalten und wird laufend überwacht.</p>
+        <ul><li>Firewall: nur die nötigen Zugänge offen</li><li>Wartungszugang nur mit Schlüssel, nicht mit Passwort</li><li>Automatische Sicherheitsupdates und Verfügbarkeitsüberwachung</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VERGLEICH -->
+<section id="vergleich" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <span class="eyebrow">Vergleich</span>
+    <h2>Heute Excel, morgen die Kontroll-App</h2>
+    <p class="lead">Auch die heutige Excel-Datei liegt nicht „offline“. Der Unterschied: In der App ist der Schutz eingebaut und kontrolliert.</p>
+    <div class="card compare">
+      <table>
+        <thead><tr><th></th><th>Excel-Datei heute</th><th class="app">Kontroll-App in der Cloud</th></tr></thead>
+        <tbody>
+          <tr><td>Zugriff unterwegs</td><td class="bad">Umständlich, Datei auf dem Handy kaum bearbeitbar</td><td class="good">Jederzeit im Browser oder als App auf dem Smartphone</td></tr>
+          <tr><td>Wer sieht die Daten?</td><td class="bad">Jeder, der die Datei hat oder kopiert</td><td class="good">Nur angemeldete Benutzer mit passender Rolle</td></tr>
+          <tr><td>Verlorenes Gerät</td><td class="bad">Ganze Liste liegt eventuell auf dem Gerät</td><td class="good">Konto sperren, Zugang ist sofort weg</td></tr>
+          <tr><td>Gleichzeitiges Arbeiten</td><td class="bad">Konflikte und doppelte Versionen</td><td class="good">Alle arbeiten auf demselben, aktuellen Stand</td></tr>
+          <tr><td>Nachvollziehbarkeit</td><td class="bad">Unklar, wer was geändert hat</td><td class="good">Verlauf mit Benutzer und Zeitpunkt</td></tr>
+          <tr><td>Sicherung</td><td class="bad">Abhängig davon, dass jemand daran denkt</td><td class="good">Automatisch jede Nacht, verschlüsselt, zweiter Standort</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="fragen">
+  <div class="wrap">
+    <span class="eyebrow">Häufige Bedenken</span>
+    <h2>Fragen, die Sie sich vielleicht stellen</h2>
+    <div class="faq">
+      <details class="card" open><summary>Ist „Cloud“ nicht unsicherer als ein Server bei uns im Büro?</summary>
+        <div class="a">Meist ist es umgekehrt. Ein professionelles Rechenzentrum hat Zutrittskontrolle, Notstrom, Brandschutz und redundante Internetanbindung. Ein Büro-Server müsste zudem für den Zugriff unterwegs ohnehin ins Internet geöffnet werden, dann aber ohne diese Schutzmassnahmen.</div></details>
+      <details class="card"><summary>Wer hat Zugriff auf unsere Daten?</summary>
+        <div class="a">Nur Ihre Benutzer mit eigenem Konto. Für die technische Wartung gibt es einen separat geschützten Zugang (nur mit kryptografischem Schlüssel). Der Hoster stellt lediglich die Infrastruktur zur Verfügung und arbeitet nicht mit Ihren Daten.</div></details>
+      <details class="card"><summary>Was passiert, wenn ein Smartphone verloren geht?</summary>
+        <div class="a">Der Administrator sperrt das Konto oder entfernt den Passkey des Geräts. Damit ist der Zugang sofort weg. Ohne Fingerabdruck oder Gerätesperre kann zudem niemand die App öffnen.</div></details>
+      <details class="card"><summary>Was, wenn der Server ausfällt oder Daten verloren gehen?</summary>
+        <div class="a">Die Überwachung meldet einen Ausfall sofort. Die Daten werden jede Nacht verschlüsselt gesichert und zusätzlich an einem zweiten Standort abgelegt. Daraus lässt sich der Stand der letzten 30 Tage wiederherstellen, und dieser Ablauf wird vor dem Start einmal getestet.</div></details>
+      <details class="card"><summary>Sind wir vom Anbieter abhängig?</summary>
+        <div class="a">Nein. Die App läuft auf einem normalen Linux-Server und alle Daten stecken in einer einzigen Datenbank-Datei. Ein Umzug zu einem anderen Anbieter oder auf einen eigenen Server ist jederzeit möglich.</div></details>
+      <details class="card"><summary>Was ist mit dem Datenschutz (revDSG)?</summary>
+        <div class="a">Die Daten liegen in der Schweiz, der Zugriff ist auf berechtigte Personen beschränkt, Verbindungen und Sicherungen sind verschlüsselt, und in die technischen Protokolle werden keine Personendaten geschrieben.</div></details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="closing">
+      <div>
+        <h2>Kurz zusammengefasst</h2>
+        <p>Die Kontroll-App ist im Büro und unterwegs immer erreichbar, und Ihre Daten sind dabei besser geschützt als heute in der Excel-Datei.</p>
+      </div>
+      <ul>
+        <li><span class="chk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Verschlüsselt</b> auf dem ganzen Weg</span></li>
+        <li><span class="chk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span><b>In der Schweiz</b> gespeichert</span></li>
+        <li><span class="chk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Nur Ihre Mitarbeitenden</b> haben Zugriff</span></li>
+        <li><span class="chk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Jede Nacht gesichert</b>, an zwei Standorten</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Kontroll-App GWE Elektrosicherheit · Betriebs- und Sicherheitskonzept · Stand November 2026</div>
+</footer>
+
+</body>
+</html>
