@@ -348,6 +348,15 @@ body.dragging .ocr-zone{outline:2px dashed var(--salmon);outline-offset:-6px}
 .mail-text{width:100%;font-size:14px;line-height:1.5;resize:vertical}
 .modal:has(.mail-form){max-width:760px}
 @media (max-width:900px){.vorlage{grid-template-columns:minmax(0,1fr)}.gem-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mail-form{grid-template-columns:minmax(0,1fr);gap:4px}}
+/* Kontrolleure */
+.farben{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0}
+.farben input{position:absolute;opacity:0;pointer-events:none}
+.farben span{display:block;width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.farben input:checked+span{box-shadow:0 0 0 2px var(--ink)}
+.farben input:focus-visible+span{outline:2px solid var(--red);outline-offset:2px}
+tr.inaktiv td{opacity:.55}
+.ktneu{border:1px dashed var(--line);border-radius:12px;padding:12px;margin-top:4px}
+.pf-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
 </style>
 </head>
 <body>
@@ -430,7 +439,7 @@ const OBJEKTE=['EFH','Zweifamilienhaus','MFH','DEFH','Stall','Gewerbe','Wohn- & 
 const PERIODEN=[['1','Jährlich',1],['3','3 Jahre',3],['5','5 Jahre',5],['5S','5 Jahre SCHIII',5],['10','10 Jahre',10],['20','20 Jahre',20],['GP','Geräteprüfung',1]];
 const perJ=p=>(PERIODEN.find(x=>x[0]===String(p))||[])[2]||0;
 const perL=p=>(PERIODEN.find(x=>x[0]===String(p))||[])[1]||'–';
-const KONTROLLEURE=[{id:'livio',name:'Livio',kurz:'LI',color:'#DA291C'},{id:'lukas',name:'Lukas',kurz:'LU',color:'#3B4A5C'}];
+const KONTROLLEURE=[{id:'livio',name:'Livio',kurz:'LI',color:'#DA291C',aktiv:true},{id:'lukas',name:'Lukas',kurz:'LU',color:'#3B4A5C',aktiv:true}];
 const KT=id=>KONTROLLEURE.find(k=>k.id===id)||{name:'–',kurz:'?',color:'#999'};
 const STUNDENANSATZ=130;
 const PLZ=[[6460,'Altdorf'],[6461,'Isenthal'],[6462,'Seedorf'],[6463,'Bürglen'],[6464,'Spiringen'],[6465,'Unterschächen'],[6466,'Bauen'],[6467,'Schattdorf'],[6468,'Attinghausen'],[6469,'Haldi'],[6472,'Erstfeld'],[6473,'Silenen'],[6474,'Amsteg'],[6475,'Bristen'],[6476,'Intschi'],[6482,'Gurtnellen'],[6484,'Wassen'],[6485,'Meien'],[6487,'Göschenen'],[6490,'Andermatt'],[6491,'Realp'],[6493,'Hospental'],[6452,'Sisikon'],[6454,'Flüelen'],[6377,'Seelisberg']];
@@ -637,7 +646,7 @@ function vDash(){
   const ums=dy.reduce((s,d)=>s+d.betrag,0);
   const months=[];for(let i=11;i>=0;i--){const d=new Date(TODAY.getFullYear(),TODAY.getMonth()-i,1);months.push({k:`${d.getFullYear()}-${pad(d.getMonth()+1)}`,l:MONATE[d.getMonth()]})}
   const per=months.map(m=>({l:m.l,v:state.done.filter(d=>d.durchgefuehrt.startsWith(m.k)).length}));
-  const load=KONTROLLEURE.map(kt=>({kt,open:o.filter(k=>k.kontrolleur===kt.id).length,ter:o.filter(k=>k.kontrolleur===kt.id&&k.termin&&diff(k.termin)>=0).length}));
+  const load=ktSel().map(kt=>({kt,open:o.filter(k=>k.kontrolleur===kt.id).length,ter:o.filter(k=>k.kontrolleur===kt.id&&k.termin&&diff(k.termin)>=0).length}));
   const greet=new Date().getHours()<11?'Guten Morgen':new Date().getHours()<17?'Guten Tag':'Guten Abend';
   return `
   <div class="page-head"><div><h1>${greet}, ${esc(me().name)}</h1><div class="sub">${WT[TODAY.getDay()]==='So'?'Sonntag':['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][TODAY.getDay()]}, ${TODAY.getDate()}. ${MONATE_L[TODAY.getMonth()]} ${y} · ${o.length} offene unabhängige Kontrollen</div></div>
@@ -772,7 +781,7 @@ function vDetail(id){
         ${f('art','Kontrollart',`<select class="sel" id="f_art" name="art" data-recalc>${opt(ARTEN.map(a=>[a.code,a.code+' – '+a.name]),k.art)}</select>`)}
         ${f('periode','Periodizität',`<select class="sel" id="f_periode" name="periode">${opt([['','–'],...PERIODEN.map(([v,l])=>[v,l])],k.periode??'')}</select>`)}
         ${f('frist','Frist <span class="req">*</span>',inp('frist',k.frist,'date','required'))}
-        ${f('kontrolleur','Durchgeführt von',`<select class="sel" id="f_kontrolleur" name="kontrolleur">${opt(KONTROLLEURE.map(x=>[x.id,x.name]),k.kontrolleur)}</select>`)}
+        ${f('kontrolleur','Durchgeführt von',`<select class="sel" id="f_kontrolleur" name="kontrolleur">${opt(ktSel(k.kontrolleur).map(x=>[x.id,x.name]),k.kontrolleur)}</select>`)}
         ${f('dringend','Dringlichkeit',`<select class="sel" id="f_dringend" name="dringend">${opt([[0,'normal'],[1,'dringend (x)'],[2,'sehr dringend (xxx)']],k.dringend)}</select>`)}
         ${f('projekt','Projekt-Nr. / Weitergeleitet an',inp('projekt',k.projekt))}
       </div></div>
@@ -854,7 +863,7 @@ function vTermine(){
   return `
   <div class="page-head"><div><h1>Terminplanung</h1><div class="sub">KW ${kw} · ${fd(days[0])} – ${fd(days[5])}</div></div>
     <div class="btn-row"><button class="btn btn-icon" data-action="week" data-d="-1" aria-label="Vorherige Woche">${ic('left')}</button><button class="btn" data-action="week" data-d="0">Heute</button><button class="btn btn-icon" data-action="week" data-d="1" aria-label="Nächste Woche">${ic('right')}</button></div></div>
-  <div class="legend" style="margin-bottom:12px">${KONTROLLEURE.map(k=>`<span><span class="dot" style="background:${k.color}"></span>${k.name}</span>`).join('')}</div>
+  <div class="legend" style="margin-bottom:12px">${ktSel().map(k=>`<span><span class="dot" style="background:${k.color}"></span>${k.name}</span>`).join('')}</div>
   <div class="week">${days.map(d=>{const e=evFor(d);return `<div class="day ${d===toISO(TODAY)?'today':''}"><div class="day-h"><span class="small muted" style="font-weight:600">${WT[parse(d).getDay()]}</span><b>${parse(d).getDate()}.</b></div><div class="day-b">${e.map(ev).join('')||'<div class="tiny muted" style="padding:6px">–</div>'}</div></div>`}).join('')}</div>
   <div class="agenda">${days.map(d=>{const e=evFor(d);return `<div style="margin:14px 0 8px;font-weight:600;${d===toISO(TODAY)?'color:var(--red)':''}">${['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][parse(d).getDay()]}, ${fd(d)}</div>
       ${e.length?`<div style="display:flex;flex-direction:column;gap:8px">${e.map(ev).join('')}</div>`:'<div class="tiny muted">Keine Termine</div>'}`}).join('')}</div>
@@ -990,13 +999,13 @@ function vStamm(){
   if(ui.stamm==='arten') body=`<table class="t"><thead><tr><th class="ns">Kürzel</th><th class="ns">Bezeichnung</th><th class="ns">Std.-Periodizität</th><th class="ns" style="text-align:right">Std.-Pauschale</th></tr></thead><tbody>${ARTEN.map(a=>`<tr style="cursor:default"><td>${artTag(a.code)}</td><td>${a.name}</td><td>${perL(a.period)}</td><td style="text-align:right">${a.pauschale?chf(a.pauschale):'nach Aufwand'}</td></tr>`).join('')}</tbody></table>`;
   if(ui.stamm==='objekte') body=`<div class="card-b chips">${OBJEKTE.map(o=>`<span class="chip">${o}</span>`).join('')}</div>`;
   if(ui.stamm==='plz') body=`<table class="t"><thead><tr><th class="ns">PLZ</th><th class="ns">Gemeinde</th><th class="ns">EWE</th><th class="ns">Offene Kontrollen</th></tr></thead><tbody>${PLZ.slice().sort((a,b)=>a[1].localeCompare(b[1])).map(p=>`<tr style="cursor:default"><td>${p[0]}</td><td>${p[1]}</td><td>${(e=>e?`<span class="badge b-blue">${esc(e.kurz)}</span>`:'<span class="badge b-warn">fehlt</span>')(EWE.find(e=>e.gem.includes(p[1])))}</td><td>${state.open.filter(k=>k.ort===p[1]).length||'–'}</td></tr>`).join('')}</tbody></table>`;
-  if(ui.stamm==='kt') body=`<table class="t"><thead><tr><th class="ns">Name</th><th class="ns">Kürzel</th><th class="ns">Rolle</th><th class="ns">Offen</th></tr></thead><tbody>${KONTROLLEURE.map(k=>`<tr style="cursor:default"><td>${ktDot(k.id)}</td><td>${k.kurz}</td><td>${k.id==='lukas'?'Administrator':'Kontrolleur'}</td><td>${state.open.filter(x=>x.kontrolleur===k.id).length}</td></tr>`).join('')}</tbody></table>`;
+  if(ui.stamm==='kt') body=stammKt();
   if(ui.stamm==='ewe') body=stammEwe();
   if(ui.stamm==='vorlagen') body=stammVorlage();
   if(ui.stamm==='mail') body=stammMail();
   if(ui.stamm==='kal') body=stammKalender();
   if(ui.stamm==='tarif') body=`<div class="card-b form-grid" style="max-width:560px"><div class="field"><label>Stundenansatz (CHF/h)</label><input class="input" value="${STUNDENANSATZ}"></div><div class="field"><label>MWST-Satz</label><input class="input" value="8.1 %"></div></div>`;
-  return `<div class="page-head"><div><h1>Stammdaten</h1><div class="sub">Auswahllisten, EWE, Mail-Vorlagen und Versand-Einstellungen (bisher Blätter „Dropdown“ und „PLZ“)</div></div>${ui.stamm==='ewe'?`<button class="btn btn-primary" data-action="eweedit" data-id="">${ic('plus')}Neues EWE</button>`:['vorlagen','mail','kal'].includes(ui.stamm)?'':`<button class="btn" data-action="toast" data-msg="Bearbeiten der Stammdaten folgt in der finalen Version">${ic('plus')}Eintrag hinzufügen</button>`}</div>
+  return `<div class="page-head"><div><h1>Stammdaten</h1><div class="sub">Auswahllisten, EWE, Mail-Vorlagen und Versand-Einstellungen (bisher Blätter „Dropdown“ und „PLZ“)</div></div>${ui.stamm==='ewe'?`<button class="btn btn-primary" data-action="eweedit" data-id="">${ic('plus')}Neues EWE</button>`:ui.stamm==='kt'?`<button class="btn btn-primary" data-action="ktedit" data-id="">${ic('plus')}Neuer Kontrolleur</button>`:['vorlagen','mail','kal'].includes(ui.stamm)?'':`<button class="btn" data-action="toast" data-msg="Bearbeiten der Stammdaten folgt in der finalen Version">${ic('plus')}Eintrag hinzufügen</button>`}</div>
   <div class="tabs">${tabs.map(([k,l])=>`<button class="tab ${ui.stamm===k?'on':''}" data-action="stamm" data-t="${k}">${l}</button>`).join('')}</div>
   <div class="card table-wrap">${body}</div>`;
 }
@@ -1012,7 +1021,7 @@ function vMehr(){
     ${it('#/konto','user','Mein Konto','Passwort, Fingerabdruck-Login')}
     <div class="li" data-action="logout"><div class="tl-ic">${ic('logout')}</div><div class="body"><div class="t1">Abmelden</div><div class="t2">Angemeldet als ${esc(me().name)}</div></div></div>
     <div class="li" data-action="reset"><div class="tl-ic">${ic('reset')}</div><div class="body"><div class="t1">Demo-Daten zurücksetzen</div><div class="t2">Prototyp in den Ausgangszustand versetzen</div></div></div>
-  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.8</div>`;
+  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.9</div>`;
 }
 
 /* ---------- Anmeldung & Rollen ----------
@@ -1156,7 +1165,8 @@ function userModal(id){
       <div class="field"><label>Name</label><input class="input" name="name" value="${esc(u.name)}" required></div>
       <div class="field"><label>Benutzername</label><input class="input" name="username" value="${esc(u.username)}" autocapitalize="none" required></div>
       <div class="field"><label>Rolle</label><select class="sel" name="rolle" ${self?'disabled':''}><option value="kontrolleur" ${u.rolle==='kontrolleur'?'selected':''}>Kontrolleur</option><option value="admin" ${u.rolle==='admin'?'selected':''}>Administrator</option></select></div>
-      <div class="field"><label>Verknüpfter Kontrolleur</label><select class="sel" name="kt"><option value="">– keiner –</option>${KONTROLLEURE.map(k=>`<option value="${k.id}" ${u.kt===k.id?'selected':''}>${k.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Verknüpfter Kontrolleur</label><select class="sel" name="kt"><option value="">– keiner –</option>${ktSel(u.kt).map(k=>`<option value="${k.id}" ${u.kt===k.id?'selected':''}>${k.name}</option>`).join('')}<option value="__neu" ${id?'':'selected'}>+ Neuer Kontrolleur …</option></select></div>
+      <div class="field full ktneu" id="ktneu" ${id?'hidden':''}><div class="small" style="font-weight:600;margin-bottom:8px">Neuer Kontrolleur (Name wie Benutzer)</div><div class="form-grid">${ktFields({},'kt_')}</div><div class="tiny muted" style="margin-top:6px">Erscheint danach automatisch bei Termin, Terminplanung, Auswertung und unter Stammdaten → Outlook-Kalender. Der Zugriff auf das Postfach wird nach dem Speichern geprüft.</div></div>
       ${id?'':`<div class="field full"><label>Startpasswort</label><input class="input" name="pw" value="Gwe-${Math.random().toString(36).slice(2,8)}"><div class="tiny muted">Muss bei der ersten Anmeldung geändert werden.</div></div>`}
     </div>
     <label class="check"><input type="checkbox" name="aktiv" ${u.aktiv?'checked':''} ${self?'disabled':''}><span>Benutzer aktiv (kann sich anmelden)</span></label>
@@ -1204,11 +1214,13 @@ const AUTH_ACTIONS={
   'user-save':d=>{const v=mval();if(!v.name||!v.username) return toast('Name und Benutzername ausfüllen',true);
     const uname=v.username.trim().toLowerCase();
     if(state.users.some(x=>x.username===uname&&x.id!==+d.id)) return toast('Benutzername bereits vergeben',true);
+    let ktNeu=null; if(v.kt==='__neu'){const r=ktAnlegen(v,'kt_',v.name,uname); if(typeof r==='string') return toast(r,true); v.kt=r.id; ktNeu=r.id;}
     let u=state.users.find(x=>x.id===+d.id); const self=u&&u.username===session;
     if(!u){u={id:state.nextUser++,bio:0,last:''};state.users.push(u)}
     Object.assign(u,{name:v.name.trim(),username:uname,kt:v.kt,...(self?{}:{rolle:v.rolle,aktiv:!!v.aktiv})});
     if(self) session=uname;
-    closeModal();toast('Benutzer gespeichert');render()},
+    closeModal();toast(ktNeu?`Benutzer und Kontrolleur ${v.name.trim()} angelegt`:'Benutzer gespeichert');render();
+    if(ktNeu) setTimeout(()=>pfTest(ktNeu),1200)},
   geour:async d=>{
     const k=state.open.find(x=>x.id===+d.id)||state.done.find(x=>x.id===+d.id); if(!k) return;
     const w=window.open('about:blank','_blank');
@@ -1616,12 +1628,19 @@ let CALCFG={aktiv:true,verfahren:'direkt',postfach:{livio:'livio@gwe-elektrosich
 const calTxt=k=>`${fdw(k.termin)} ${k.zeit||''}`.trim();
 function syncCal(k,prev){ // prev = Stand vor der Änderung
   if(!CALCFG.aktiv) return '';
-  const was=prev&&prev.termin, now=!!k.termin, ktWechsel=prev&&prev.kontrolleur!==k.kontrolleur;
+  const was=prev&&prev.termin&&k.calOk!==false, now=!!k.termin, ktWechsel=prev&&prev.kontrolleur!==k.kontrolleur;
   const name=id=>KT(id)?.name||id, out=[];
   const log=t=>{k.log.push({t:'cal',d:toISO(TODAY),txt:t});out.push(t)};
+  const st=pfStatus(k.kontrolleur);
+  if(now&&!st.ok&&(!was||ktWechsel||prev.termin!==k.termin||prev.zeit!==k.zeit)){
+    if(was&&ktWechsel) log(`Outlook-Kalender ${name(prev.kontrolleur)}: Termin ${fdw(prev.termin)} ${prev.zeit||''} entfernt`);
+    log(`Outlook-Kalender ${name(k.kontrolleur)}: NICHT eingetragen – ${st.txt}`); k.calOk=false;
+    return `Kalender ${name(k.kontrolleur)} nicht aktualisiert (${st.txt})`;
+  }
   if(was&&(!now||ktWechsel)) log(`Outlook-Kalender ${name(prev.kontrolleur)}: Termin ${fdw(prev.termin)} ${prev.zeit||''} entfernt`);
   if(now&&(!was||ktWechsel)) log(`Outlook-Kalender ${name(k.kontrolleur)}: Termin ${calTxt(k)} eingetragen (blockiert ${k.aufwandH||2} h)`);
   else if(now&&was&&(prev.termin!==k.termin||prev.zeit!==k.zeit)) log(`Outlook-Kalender ${name(k.kontrolleur)}: Termin verschoben ${fdw(prev.termin)} ${prev.zeit||''} → ${calTxt(k)}`);
+  if(out.length) k.calOk=true;
   return out.length?`Outlook-Kalender ${name(k.kontrolleur)} aktualisiert`:'';
 }
 const toMin=z=>{const [h,m]=(z||'08:00').split(':').map(Number);return h*60+(m||0)};
@@ -1643,9 +1662,10 @@ function stammKalender(){
     <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':''} ${ro} data-calcfg="aktiv"><span><b>Termine automatisch in den Outlook-Kalender des Kontrolleurs eintragen</b> – bei neuem Termin, Verschiebung, Kontrolleur-Wechsel und gelöschtem Termin</span></label>
     <div class="form-grid" style="margin-top:12px">
       <div class="field full"><label>Verfahren</label><div class="mf-ro">Direkt im Kalender eintragen (Microsoft Graph) – sofort blockiert, kein Annehmen nötig, es werden keine E-Mails versendet</div></div>
-      ${KONTROLLEURE.map(k=>`<div class="field"><label>Outlook-Postfach ${esc(k.name)}</label><input class="input" ${ro} value="${esc(CALCFG.postfach[k.id]||'')}" data-calpf="${k.id}"><div class="tiny muted">Beispieladresse – vom Kunden bestätigen</div></div>`).join('')}
+      ${ktSel().map(k=>`<div class="field"><label>Outlook-Postfach ${esc(k.name)}</label><div class="pf-row"><input class="input" ${ro} value="${esc(CALCFG.postfach[k.id]||'')}" data-calpf="${k.id}"><button type="button" class="btn" data-action="pftest" data-id="${k.id}">${ic('cal')}Zugriff prüfen</button></div><div style="margin-top:4px">${pfBadge(k.id)}${!pfStatus(k.id).ok&&CALCFG.postfach[k.id]?` <a class="tiny" style="color:var(--red);cursor:pointer" data-action="pffreigabe" data-id="${k.id}">Demo: Freigabe simulieren</a>`:''}</div></div>`).join('')}
     </div>
-    <div class="hint-box" style="margin-top:14px">${ic('cal')}<div>Eintrag im Kalender: <b>Betreff</b> „Kontrolle PK – Adresse, Ort“, <b>Ort</b> = Objektadresse, <b>Dauer</b> = geschätzter Zeitaufwand, <b>Status</b> „Gebucht“, im Text Eigentümer, Telefon, Zählernummer und Link zur Kontrolle in der App. Prototyp: nur simuliert.</div></div>
+    <div class="hint-box" style="margin-top:14px">${ic('users')}<div><b>Neue Kontrolleure:</b> Die App darf nur in Postfächer der Microsoft-365-Gruppe <b>„GWE Kontrolleure“</b> schreiben. Ein neuer Kontrolleur wird im Microsoft-365-Admin-Center in diese Gruppe aufgenommen; danach mit „Zugriff prüfen“ testen.</div></div>
+    <div class="hint-box" style="margin-top:10px">${ic('cal')}<div>Eintrag im Kalender: <b>Betreff</b> „Kontrolle PK – Adresse, Ort“, <b>Ort</b> = Objektadresse, <b>Dauer</b> = geschätzter Zeitaufwand, <b>Status</b> „Gebucht“, im Text Eigentümer, Telefon, Zählernummer und Link zur Kontrolle in der App. Prototyp: nur simuliert.</div></div>
     ${isAdmin()?`<div class="btn-row" style="margin-top:14px"><button class="btn btn-primary" data-action="calsave">${ic('check')}Speichern</button></div>`:''}
   </div>`;
 }
@@ -1653,6 +1673,74 @@ Object.assign(MAIL_ACTIONS,{
   calsave:()=>{document.querySelectorAll('[data-calcfg]').forEach(i=>CALCFG[i.dataset.calcfg]=i.type==='checkbox'?i.checked:i.value);
     document.querySelectorAll('[data-calpf]').forEach(i=>CALCFG.postfach[i.dataset.calpf]=i.value.trim());toast('Kalender-Einstellungen gespeichert');render()},
 });
+/* ---------- Kontrolleure verwalten + Postfach-Zugriff (im Prototyp simuliert) ---------- */
+const ktSel=cur=>KONTROLLEURE.filter(k=>k.aktiv!==false||k.id===cur);
+const KT_FARBEN=['#DA291C','#3B4A5C','#1F7A4D','#B26A00','#5B4BB7','#0F6CBD','#9C2F6B'];
+// Postfächer, die in Microsoft 365 für die App freigegeben sind (Gruppe „GWE Kontrolleure“) – Demo
+const M365_FREIGABE=new Set(['livio@gwe-elektrosicherheit.ch','lukas@gwe-elektrosicherheit.ch']);
+const ktUser=id=>state.users.find(u=>u.kt===id);
+function pfStatus(id){
+  const pf=CALCFG.postfach[id];
+  if(!pf) return {ok:false,txt:'kein Postfach hinterlegt'};
+  if(!M365_FREIGABE.has(pf.toLowerCase())) return {ok:false,txt:'kein Zugriff – Postfach nicht in der Gruppe „GWE Kontrolleure“'};
+  return {ok:true,txt:'Zugriff ok'};
+}
+const pfBadge=id=>{const s=pfStatus(id);return `<span class="badge ${s.ok?'b-ok':'b-warn'}">${s.ok?ic('check','style="width:12px;height:12px"'):ic('alert','style="width:12px;height:12px"')}${esc(s.txt)}</span>`};
+function ktFields(k,prefix=''){
+  return `<div class="field"><label>Kürzel</label><input class="input" name="${prefix}kurz" value="${esc(k.kurz||'')}" maxlength="4" placeholder="z.B. MA"></div>
+    <div class="field"><label>Farbe in Terminplanung</label><div class="farben">${KT_FARBEN.map((c,i)=>`<label><input type="radio" name="${prefix}color" value="${c}" ${(k.color||KT_FARBEN[KONTROLLEURE.length%KT_FARBEN.length])===c?'checked':''}><span style="background:${c}"></span></label>`).join('')}</div></div>
+    <div class="field full"><label>Outlook-Postfach (für den Kalender)</label><input class="input" name="${prefix}postfach" type="email" value="${esc(k.postfach||'')}" placeholder="vorname@gwe-elektrosicherheit.ch"></div>`;
+}
+function stammKt(){
+  return `<table class="t"><thead><tr><th class="ns">Name</th><th class="ns">Kürzel</th><th class="ns">Benutzer</th><th class="ns">Outlook-Postfach</th><th class="ns">Status</th><th class="ns">Offen</th><th class="ns"></th></tr></thead><tbody>
+  ${KONTROLLEURE.map(k=>{const u=ktUser(k.id);return `<tr data-action="ktedit" data-id="${k.id}" class="${k.aktiv===false?'inaktiv':''}"><td>${ktDot(k.id)}</td><td>${esc(k.kurz)}</td><td>${u?esc(u.username):'<span class="muted">–</span>'}</td>
+    <td>${esc(CALCFG.postfach[k.id]||'–')}<div>${pfBadge(k.id)}</div></td><td>${k.aktiv===false?'<span class="badge b-grey">inaktiv</span>':'<span class="badge b-ok">aktiv</span>'}</td><td>${state.open.filter(x=>x.kontrolleur===k.id).length}</td><td>${ic('edit','style="color:var(--muted)"')}</td></tr>`}).join('')}
+  </tbody></table>
+  <div class="card-b"><div class="hint-box">${ic('users')}<div>Neue Kontrolleure am einfachsten in der <b>Benutzerverwaltung</b> erfassen (Benutzer mit Rolle Kontrolleur → „Als neuen Kontrolleur anlegen“). Inaktive Kontrolleure stehen nicht mehr zur Auswahl, bleiben aber in Verlauf und Auswertung erhalten.</div></div></div>`;
+}
+function ktModal(id){
+  const k0=KONTROLLEURE.find(x=>x.id===id);
+  const k=k0?{...k0,postfach:CALCFG.postfach[k0.id]||''}:{id:'',name:'',kurz:'',color:'',postfach:'',aktiv:true};
+  const offen=k0?state.open.filter(x=>x.kontrolleur===k0.id).length:0;
+  modal(k0?`Kontrolleur bearbeiten – ${esc(k.name)}`:'Neuer Kontrolleur',`
+    <div class="form-grid"><div class="field full"><label>Name</label><input class="input" name="name" value="${esc(k.name)}" required></div>${ktFields(k)}</div>
+    <label class="check"><input type="checkbox" name="aktiv" ${k.aktiv!==false?'checked':''}><span>Aktiv (steht bei Termin, Erfassen und Durchführung zur Auswahl)</span></label>
+    ${k0&&offen?`<div class="tiny muted">${offen} offene Kontrollen sind ${esc(k.name)} zugeteilt; beim Deaktivieren bleiben sie zugeteilt und können einzeln umgeteilt werden.</div>`:''}`,
+    `<button class="btn" data-action="close">Abbrechen</button><button class="btn btn-primary" data-action="ktsave" data-id="${k.id}">${ic('check')}Speichern</button>`);
+}
+function ktAnlegen(v,prefix,name,wunschId){
+  const kurz=(v[prefix+'kurz']||'').trim().toUpperCase(), pf=(v[prefix+'postfach']||'').trim();
+  if(!kurz) return 'Kürzel angeben';
+  if(KONTROLLEURE.some(x=>x.kurz.toUpperCase()===kurz)) return `Kürzel ${kurz} ist bereits vergeben`;
+  if(pf&&!mailOk(pf)) return 'Outlook-Postfach ist keine gültige E-Mail-Adresse';
+  let id=(wunschId||name).toLowerCase().replace(/[^a-z0-9]+/g,'')||'kt'; while(KONTROLLEURE.some(x=>x.id===id)) id+='2';
+  KONTROLLEURE.push({id,name:name.trim(),kurz,color:v[prefix+'color']||KT_FARBEN[0],aktiv:true});
+  CALCFG.postfach[id]=pf;
+  return {id};
+}
+// Probe-Eintrag im Kalender (final: Termin anlegen und sofort wieder löschen)
+function pfTest(id){
+  const s=pfStatus(id),k=KT(id);
+  toast(s.ok?`Kalender ${k.name}: Probe-Eintrag erstellt und wieder gelöscht – Zugriff ok`:`Kalender ${k.name}: ${s.txt}`,!s.ok,'cal');
+}
+Object.assign(MAIL_ACTIONS,{
+  ktedit:d=>ktModal(d.id),
+  ktsave:d=>{const v=mval(),k0=KONTROLLEURE.find(x=>x.id===d.id);
+    if(!v.name) return toast('Name angeben',1);
+    if(!k0){const r=ktAnlegen(v,'',v.name);if(typeof r==='string')return toast(r,1);closeModal();toast(`Kontrolleur ${v.name} angelegt`);render();setTimeout(()=>pfTest(r.id),900);return}
+    const kurz=(v.kurz||'').trim().toUpperCase(),pf=(v.postfach||'').trim();
+    if(!kurz) return toast('Kürzel angeben',1);
+    if(KONTROLLEURE.some(x=>x!==k0&&x.kurz.toUpperCase()===kurz)) return toast(`Kürzel ${kurz} ist bereits vergeben`,1);
+    if(pf&&!mailOk(pf)) return toast('Outlook-Postfach ist keine gültige E-Mail-Adresse',1);
+    const pfNeu=CALCFG.postfach[k0.id]!==pf;
+    Object.assign(k0,{name:v.name.trim(),kurz,color:v.color||k0.color,aktiv:!!v.aktiv});CALCFG.postfach[k0.id]=pf;
+    closeModal();toast('Kontrolleur gespeichert');render();if(pfNeu&&pf)setTimeout(()=>pfTest(k0.id),900)},
+  pftest:d=>pfTest(d.id),
+  pffreigabe:d=>{const pf=CALCFG.postfach[d.id];if(pf){M365_FREIGABE.add(pf.toLowerCase());toast(`Demo: ${pf} in Gruppe „GWE Kontrolleure“ aufgenommen`,0,'users');render()}},
+});
+// Benutzer-Dialog: Felder für neuen Kontrolleur ein-/ausblenden
+document.addEventListener('change',e=>{if(e.target.name==='kt'&&e.target.closest('#mform')){const b=document.getElementById('ktneu');if(b)b.hidden=e.target.value!=='__neu'}});
+
 /* ---------- Modals ---------- */
 function modal(title,body,foot){
   document.getElementById('layer').innerHTML=`<div class="overlay" data-action="closebg"><div class="modal" role="dialog" aria-modal="true"><div class="modal-h"><h2>${title}</h2><button class="btn btn-ghost btn-icon" data-action="close" aria-label="Schliessen">${ic('x')}</button></div>
@@ -1672,7 +1760,7 @@ function openModal(m,id){
     cancel+`<button class="btn btn-primary" data-action="m-call" data-id="${id}">Speichern</button>`);
   if(m==='termin') modal(k.termin?'Termin verschieben':'Termin vereinbaren',`${head}
     <div class="form-grid"><div class="field"><label>Datum</label><input class="input" type="date" name="termin" value="${k.termin||addDays(2)}" required></div><div class="field"><label>Zeit</label><input class="input" type="time" name="zeit" value="${k.zeit||'08:00'}"></div>
-    <div class="field full"><label>Kontrolleur</label><select class="sel" name="kontrolleur">${KONTROLLEURE.map(x=>`<option value="${x.id}" ${x.id===k.kontrolleur?'selected':''}>${x.name}</option>`).join('')}</select></div></div>
+    <div class="field full"><label>Kontrolleur</label><select class="sel" name="kontrolleur">${ktSel(k.kontrolleur).map(x=>`<option value="${x.id}" ${x.id===k.kontrolleur?'selected':''}>${x.name}</option>`).join('')}</select></div></div>
     <div id="tkonf" data-id="${k.id}" data-kt="${k.kontrolleur}" style="margin:4px 0 10px">${konfliktHtml(k.id,k.termin||addDays(2),k.zeit||'08:00',k.kontrolleur)}</div>
     <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':'disabled'} name="cal"><span>Im Outlook-Kalender des Kontrolleurs ${k.termin?'verschieben':'eintragen'}${CALCFG.aktiv?'':' <span class="muted small">(in den Stammdaten ausgeschaltet)</span>'}</span></label>`,
     cancel+`<button class="btn btn-primary" data-action="m-termin" data-id="${id}">Termin speichern</button>`);
@@ -1687,7 +1775,7 @@ function openModal(m,id){
     modal('Kontrolle als durchgeführt melden',`${head}
       <div class="form-grid">
         <div class="field"><label>Durchgeführt am</label><input class="input" type="date" name="datum" value="${datum}" data-recalc></div>
-        <div class="field"><label>Durchgeführt von</label><select class="sel" name="kontrolleur">${KONTROLLEURE.map(x=>`<option value="${x.id}" ${x.id===k.kontrolleur?'selected':''}>${x.name}</option>`).join('')}</select></div>
+        <div class="field"><label>Durchgeführt von</label><select class="sel" name="kontrolleur">${ktSel(k.kontrolleur).map(x=>`<option value="${x.id}" ${x.id===k.kontrolleur?'selected':''}>${x.name}</option>`).join('')}</select></div>
         <div class="field"><label>Effektiver Zeitaufwand (h)</label><input class="input" type="number" step="0.25" name="h" value="${k.aufwandH}" data-recalc></div>
         <div class="field"><label>Schlussrechnung (CHF)</label><input class="input" type="number" step="5" name="betrag" value="${betrag}"></div>
         <div class="field"><label>Kontrollbericht an</label><select class="sel" name="kbAn"><option>Eigentümer</option><option>Verwaltung</option><option>Mieter</option><option>Netzbetreiber</option></select></div>
@@ -1731,7 +1819,7 @@ const A={
     const prev={termin:k.termin,zeit:k.zeit,kontrolleur:k.kontrolleur};
     k.termin=v.termin;k.zeit=v.zeit;k.kontrolleur=v.kontrolleur;k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin ${prev.termin?'verschoben':'vereinbart'}: ${fdw(k.termin)} ${k.zeit} (${KT(k.kontrolleur).name})`});
     const cal=v.cal?syncCal(k,prev):'';
-    closeModal();toast(`Termin am ${fdw(k.termin)} ${k.zeit} gespeichert${cal?' · '+cal:''}`,0,'cal');render()},
+    closeModal();toast(`Termin am ${fdw(k.termin)} ${k.zeit} gespeichert${cal?' · '+cal:''}`,cal.includes('nicht aktualisiert'),'cal');render()},
   'm-frist':d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();if(!v.neu)return;
     k.fristHist.push({alt:k.frist,neu:v.neu,am:toISO(TODAY),grund:v.grund||'–'});k.log.push({t:'frist',d:toISO(TODAY),txt:`Fristverlängerung ${fd(k.frist)} → ${fd(v.neu)}`});k.frist=v.neu;
     closeModal();toast('Fristverlängerung erfasst');render();
