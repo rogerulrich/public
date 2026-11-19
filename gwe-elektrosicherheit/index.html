@@ -807,7 +807,7 @@ function vDetail(id){
         <button class="btn" type="button" data-action="modal" data-m="call" data-id="${k.id}">${ic('phone')}Anruf protokollieren</button>
         <button class="btn" type="button" data-action="modal" data-m="termin" data-id="${k.id}">${ic('cal')}Termin ${k.termin?'verschieben':'vereinbaren'}</button>
         <button class="btn" type="button" data-action="modal" data-m="frist" data-id="${k.id}">${ic('flag')}Fristverlängerung beantragen</button>
-        <button class="btn" type="button" data-action="mailewe" data-id="${k.id}" ${k.termin?'':'disabled title="Zuerst Termin vereinbaren"'}>${ic('send')}Termin an EWE melden${k.mailEwe?` <span class="tiny muted">(gesendet ${fd(k.mailEwe)})</span>`:''}</button>
+        ${k.fristHist.length?`<button class="btn" type="button" data-action="mailewe" data-id="${k.id}">${ic('send')}Gesuch Fristverlängerung an EWE${k.mailEwe?` <span class="tiny muted">(gesendet ${fd(k.mailEwe)})</span>`:''}</button>`:''}
         <button class="btn btn-ok" type="button" data-action="modal" data-m="done" data-id="${k.id}">${ic('check')}Als durchgeführt melden</button>
       </div></div>
       <div class="card" id="docsCard">${docsCard(k)}</div>
@@ -897,9 +897,9 @@ function updateDone(){
 /* ---------- Fristverlängerungen ---------- */
 function vFristen(){
   const l=state.open.filter(k=>k.fristHist.length).flatMap(k=>k.fristHist.map(h=>({k,h}))).sort((a,b)=>b.h.am.localeCompare(a.h.am));
-  return `<div class="page-head"><div><h1>Fristverlängerungen</h1><div class="sub">Beantragte Verlängerungen mit alter und neuer Frist</div></div></div>
+  return `<div class="page-head"><div><h1>Fristverlängerungen</h1><div class="sub">Beantragte Verlängerungen mit alter und neuer Frist – das Gesuch geht per E-Mail an das EWE der Gemeinde</div></div></div>
   <div class="card">${l.length?l.map(({k,h})=>`<div class="li" data-action="go" data-href="#/kontrolle/${k.id}"><div class="tl-ic frist">${ic('flag')}</div>
-    <div class="body"><div class="t1">${esc(k.adresse)}, ${esc(k.ort)}</div><div class="t2">${esc(h.grund)} · beantragt ${fd(h.am)}</div></div>
+    <div class="body"><div class="t1">${esc(k.adresse)}, ${esc(k.ort)}</div><div class="t2">${esc(h.grund)} · beantragt ${fd(h.am)} · ${k.mailEwe?`<span style="color:var(--ok)">an ${esc(eweFor(k)?.kurz||'EWE')} gesendet ${fd(k.mailEwe)}</span>`:`<span class="muted">nicht an EWE gesendet</span>`}</div></div>
     <div style="text-align:right" class="small nowrap"><span class="muted" style="text-decoration:line-through">${fd(h.alt)}</span> → <b>${fd(h.neu)}</b><div>${fristBadge(k.frist)}</div></div></div>`).join(''):'<div class="empty">Keine Fristverlängerungen</div>'}</div>`;
 }
 
@@ -1012,7 +1012,7 @@ function vMehr(){
     ${it('#/konto','user','Mein Konto','Passwort, Fingerabdruck-Login')}
     <div class="li" data-action="logout"><div class="tl-ic">${ic('logout')}</div><div class="body"><div class="t1">Abmelden</div><div class="t2">Angemeldet als ${esc(me().name)}</div></div></div>
     <div class="li" data-action="reset"><div class="tl-ic">${ic('reset')}</div><div class="body"><div class="t1">Demo-Daten zurücksetzen</div><div class="t2">Prototyp in den Ausgangszustand versetzen</div></div></div>
-  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.7</div>`;
+  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.8</div>`;
 }
 
 /* ---------- Anmeldung & Rollen ----------
@@ -1468,30 +1468,31 @@ let EWE=[
 EWE[0].gem=GEMEINDEN.filter(g=>!EWE.slice(1).some(e=>e.gem.includes(g))&&g!=='Sisikon'); // Sisikon bewusst ohne EWE (Demo: Warnung)
 const eweFor=k=>EWE.find(e=>e.gem.includes(String(k.ort||'').trim()));
 let MAILCFG={verfahren:'graph',absender:'info@gwe-elektrosicherheit.ch',anzeigename:'GWE Elektrosicherheit',tenant:'00000000-0000-0000-0000-000000000000',client:'11111111-1111-1111-1111-111111111111',secretBis:'2028-10-31',bcc:true,gesendete:true,getestet:''};
-let VORLAGE={betreff:'Terminmeldung unabhängige Kontrolle – «Adresse», «PLZ» «Ort» (Zähler «Zählernummer»)',
+let VORLAGE={betreff:'Gesuch Fristverlängerung unabhängige Kontrolle – «Adresse», «PLZ» «Ort» (Zähler «Zählernummer»)',
   text:`«EWE-Anrede»
 
-Wir teilen Ihnen mit, dass die unabhängige Kontrolle für folgendes Objekt terminiert ist:
+Für folgendes Objekt ersuchen wir Sie um eine Verlängerung der Frist für den Sicherheitsnachweis:
 
 Objekt: «Objekt», «Adresse», «PLZ» «Ort»
 Zählernummer: «Zählernummer»
 Eigentümer: «Eigentümer»
 Kontrollart: «Kontrollart»
-Kontrolltermin: «Wochentag», «Termin», «Zeit» Uhr
-Kontrolleur: «Kontrolleur»
-Frist gemäss Aufforderung: «Frist»
 
-Den Sicherheitsnachweis stellen wir Ihnen nach der Kontrolle zu.
+Bisherige Frist: «Bisherige Frist»
+Neue Frist: «Neue Frist»
+Begründung: «Begründung»
+
+Für eine kurze Bestätigung danken wir Ihnen.
 
 Freundliche Grüsse
-«Kontrolleur»
+«Benutzer»
 GWE Elektrosicherheit`};
 const WTAG=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 const PLATZ={
   'Adresse':k=>k.adresse,'PLZ':k=>k.plz,'Ort':k=>k.ort,'Zählernummer':k=>k.zaehler||'–','Objekt':k=>k.objekt||'–',
   'Eigentümer':k=>String(k.eigentuemer||'').split(/\n/)[0],'Kontrollart':k=>ART(k.art)?.name||k.art,
-  'Termin':k=>fd(k.termin),'Wochentag':k=>k.termin?WTAG[parse(k.termin).getDay()]:'–','Zeit':k=>k.zeit||'–',
-  'Kontrolleur':k=>KT(k.kontrolleur)?.name||'','Frist':k=>fd(k.frist),
+  'Bisherige Frist':k=>fd(k.fristHist.at(-1)?.alt||k.frist),'Neue Frist':k=>fd(k.fristHist.at(-1)?.neu||k.frist),'Begründung':k=>k.fristHist.at(-1)?.grund||'–',
+  'Kontrolleur':k=>KT(k.kontrolleur)?.name||'','Benutzer':()=>me()?.name||'',
   'EWE':k=>eweFor(k)?.name||'','EWE-Anrede':k=>eweFor(k)?.anrede||'Sehr geehrte Damen und Herren','Absender':()=>MAILCFG.anzeigename,
 };
 const fill=(t,k)=>t.replace(/«([^»]+)»/g,(m,n)=>PLATZ[n]?String(PLATZ[n](k)??''):m);
@@ -1508,10 +1509,10 @@ function stammEwe(){
   </tbody></table>`;
 }
 function stammVorlage(){
-  const bsp=state.open.find(k=>k.termin&&eweFor(k))||state.open[0];
+  const bsp=state.open.find(k=>k.fristHist.length&&eweFor(k))||state.open[0];
   const unk=[...unknownFields(VORLAGE.betreff),...unknownFields(VORLAGE.text)];
   return `<div class="card-b vorlage">
-    <div><div class="field"><label>Vorlage</label><select class="sel"><option>Terminmeldung an EWE</option></select></div>
+    <div><div class="field"><label>Vorlage</label><select class="sel"><option>Gesuch Fristverlängerung an EWE</option></select></div>
       <div class="field" style="margin-top:12px"><label for="v_betreff">Betreff</label><input class="input" id="v_betreff" value="${esc(VORLAGE.betreff)}" data-vorlage="betreff"></div>
       <div class="field" style="margin-top:12px"><label for="v_text">Text</label><textarea class="input mono" id="v_text" rows="18" data-vorlage="text">${esc(VORLAGE.text)}</textarea></div>
       <div class="small muted" style="margin:10px 0 6px">Seriendruckfelder einfügen (Klick fügt an der Cursor-Position ein):</div>
@@ -1564,7 +1565,7 @@ function eweModal(id){
 /* Mail-Vorschau vor dem Versand */
 function mailModal(k){
   const e=eweFor(k);
-  modal('E-Mail an EWE – Vorschau',`
+  modal('Gesuch Fristverlängerung an EWE – Vorschau',`
     ${e?'':`<div class="hint-box warn" style="margin-bottom:12px">${ic('alert')}<div>Für <b>${esc(k.ort)}</b> ist kein EWE hinterlegt. Bitte Empfänger von Hand eintragen oder die Gemeinde in den Stammdaten einem EWE zuweisen.</div></div>`}
     <div class="mail-form">
       <label>Von</label><div class="mf-ro">${esc(MAILCFG.anzeigename)} &lt;${esc(MAILCFG.absender)}&gt;</div>
@@ -1600,13 +1601,13 @@ const MAIL_ACTIONS={
     if(diff(MAILCFG.secretBis)<0) return toast('Versand nicht möglich: Clientschlüssel abgelaufen (Stammdaten → E-Mail-Versand)',1);
     const b=document.querySelector('[data-action="mailsend"]');b.disabled=true;b.innerHTML=ic('send')+'Wird gesendet …';
     setTimeout(()=>{const e=eweFor(k);
-      k.log.push({t:'mail',d:toISO(TODAY),txt:`E-Mail an ${e?e.kurz:'EWE'} gesendet: ${v.an}${v.cc?' · CC '+v.cc:''} · BCC ${MAILCFG.absender}`});
+      k.log.push({t:'mail',d:toISO(TODAY),txt:`Gesuch Fristverlängerung an ${e?e.kurz:'EWE'} gesendet: ${v.an}${v.cc?' · CC '+v.cc:''} · BCC ${MAILCFG.absender}`});
       k.mailEwe=toISO(TODAY);
       closeModal();toast(`E-Mail an ${v.an} gesendet (Prototyp: simuliert)`,0,'send');render()},700)},
 };
 document.addEventListener('focusin',e=>{if(e.target.dataset?.vorlage) ui.vfocus=e.target.id});
 document.addEventListener('input',e=>{const t=e.target;if(!t.dataset?.vorlage)return;
-  const k=state.open.find(x=>x.termin&&eweFor(x))||state.open[0];const p=document.getElementById('vprev');if(!p)return;
+  const k=state.open.find(x=>x.fristHist.length&&eweFor(x))||state.open[0];const p=document.getElementById('vprev');if(!p)return;
   const b=document.getElementById('v_betreff').value,x=document.getElementById('v_text').value;
   p.innerHTML=`<div class="mp-h"><b>${esc(fill(b,k))}</b></div><div class="mp-b">${esc(fill(x,k))}</div>`});
 
@@ -1641,7 +1642,7 @@ function stammKalender(){
   return `<div class="card-b" style="max-width:820px">
     <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':''} ${ro} data-calcfg="aktiv"><span><b>Termine automatisch in den Outlook-Kalender des Kontrolleurs eintragen</b> – bei neuem Termin, Verschiebung, Kontrolleur-Wechsel und gelöschtem Termin</span></label>
     <div class="form-grid" style="margin-top:12px">
-      <div class="field full"><label>Verfahren</label><select class="sel" ${ro} data-calcfg="verfahren"><option value="direkt" ${CALCFG.verfahren==='direkt'?'selected':''}>Direkt im Kalender eintragen (Microsoft Graph, empfohlen – sofort blockiert, kein Annehmen nötig)</option><option value="ics" ${CALCFG.verfahren==='ics'?'selected':''}>Einladung per E-Mail (.ics) – Kontrolleur muss annehmen</option></select></div>
+      <div class="field full"><label>Verfahren</label><div class="mf-ro">Direkt im Kalender eintragen (Microsoft Graph) – sofort blockiert, kein Annehmen nötig, es werden keine E-Mails versendet</div></div>
       ${KONTROLLEURE.map(k=>`<div class="field"><label>Outlook-Postfach ${esc(k.name)}</label><input class="input" ${ro} value="${esc(CALCFG.postfach[k.id]||'')}" data-calpf="${k.id}"><div class="tiny muted">Beispieladresse – vom Kunden bestätigen</div></div>`).join('')}
     </div>
     <div class="hint-box" style="margin-top:14px">${ic('cal')}<div>Eintrag im Kalender: <b>Betreff</b> „Kontrolle PK – Adresse, Ort“, <b>Ort</b> = Objektadresse, <b>Dauer</b> = geschätzter Zeitaufwand, <b>Status</b> „Gebucht“, im Text Eigentümer, Telefon, Zählernummer und Link zur Kontrolle in der App. Prototyp: nur simuliert.</div></div>
@@ -1673,13 +1674,12 @@ function openModal(m,id){
     <div class="form-grid"><div class="field"><label>Datum</label><input class="input" type="date" name="termin" value="${k.termin||addDays(2)}" required></div><div class="field"><label>Zeit</label><input class="input" type="time" name="zeit" value="${k.zeit||'08:00'}"></div>
     <div class="field full"><label>Kontrolleur</label><select class="sel" name="kontrolleur">${KONTROLLEURE.map(x=>`<option value="${x.id}" ${x.id===k.kontrolleur?'selected':''}>${x.name}</option>`).join('')}</select></div></div>
     <div id="tkonf" data-id="${k.id}" data-kt="${k.kontrolleur}" style="margin:4px 0 10px">${konfliktHtml(k.id,k.termin||addDays(2),k.zeit||'08:00',k.kontrolleur)}</div>
-    <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':'disabled'} name="cal"><span>Im Outlook-Kalender des Kontrolleurs ${k.termin?'verschieben':'eintragen'}${CALCFG.aktiv?'':' <span class="muted small">(in den Stammdaten ausgeschaltet)</span>'}</span></label>
-    <label class="check"><input type="checkbox" checked name="ewe"><span>Danach E-Mail an ${eweFor(k)?`<b>${esc(eweFor(k).kurz)}</b> (${esc(eweFor(k).mail)})`:'das EWE <span class="muted small">(für '+esc(k.ort)+' kein EWE hinterlegt)</span>'} vorbereiten – mit Vorschau</span></label>`,
+    <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':'disabled'} name="cal"><span>Im Outlook-Kalender des Kontrolleurs ${k.termin?'verschieben':'eintragen'}${CALCFG.aktiv?'':' <span class="muted small">(in den Stammdaten ausgeschaltet)</span>'}</span></label>`,
     cancel+`<button class="btn btn-primary" data-action="m-termin" data-id="${id}">Termin speichern</button>`);
   if(m==='frist') modal('Fristverlängerung beantragen',`${head}
     <div class="form-grid"><div class="field"><label>Aktuelle Frist</label><input class="input" value="${fd(k.frist)}" disabled></div><div class="field"><label>Neue Frist</label><input class="input" type="date" name="neu" value="${diff(k.frist)>0?addDays(90,parse(k.frist)):addDays(90)}" required></div>
     <div class="field full"><label>Begründung</label><textarea class="input" name="grund" placeholder="z.B. Eigentümer im Ausland, Umbau geplant …"></textarea></div></div>
-    <div class="hint-box">${ic('doc')}<div>Das Gesuch an den Netzbetreiber kann in der finalen Version als PDF generiert werden.</div></div>`,
+    <label class="check"><input type="checkbox" checked name="ewe"><span>Danach Gesuch per E-Mail an ${eweFor(k)?`<b>${esc(eweFor(k).kurz)}</b> (${esc(eweFor(k).mail)})`:'das EWE <span class="muted small">(für '+esc(k.ort)+' kein EWE hinterlegt – Adresse von Hand)</span>'} vorbereiten – mit Vorschau</span></label>`,
     cancel+`<button class="btn btn-primary" data-action="m-frist" data-id="${id}">Verlängerung erfassen</button>`);
   if(m==='done'){
     const betrag=k.abrechnung==='aufwand'?k.aufwandH*STUNDENANSATZ:(+k.pauschale||ART(k.art).pauschale||0);
@@ -1731,11 +1731,11 @@ const A={
     const prev={termin:k.termin,zeit:k.zeit,kontrolleur:k.kontrolleur};
     k.termin=v.termin;k.zeit=v.zeit;k.kontrolleur=v.kontrolleur;k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin ${prev.termin?'verschoben':'vereinbart'}: ${fdw(k.termin)} ${k.zeit} (${KT(k.kontrolleur).name})`});
     const cal=v.cal?syncCal(k,prev):'';
-    closeModal();toast(`Termin am ${fdw(k.termin)} ${k.zeit} gespeichert${cal?' · '+cal:''}`,0,'cal');render();
-    if(v.ewe) setTimeout(()=>mailModal(k),400)},
+    closeModal();toast(`Termin am ${fdw(k.termin)} ${k.zeit} gespeichert${cal?' · '+cal:''}`,0,'cal');render()},
   'm-frist':d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();if(!v.neu)return;
     k.fristHist.push({alt:k.frist,neu:v.neu,am:toISO(TODAY),grund:v.grund||'–'});k.log.push({t:'frist',d:toISO(TODAY),txt:`Fristverlängerung ${fd(k.frist)} → ${fd(v.neu)}`});k.frist=v.neu;
-    closeModal();toast('Fristverlängerung erfasst');render()},
+    closeModal();toast('Fristverlängerung erfasst');render();
+    if(v.ewe) setTimeout(()=>mailModal(k),400)},
   'm-done':d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();
     state.open=state.open.filter(x=>x!==k);
     state.done.unshift({...k,durchgefuehrt:v.datum,kontrolleur:v.kontrolleur,aufwandH:+v.h,betrag:+v.betrag,kbAn:v.kbAn,sina:v.sina,verrechnet:false});
