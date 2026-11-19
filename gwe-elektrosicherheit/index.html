@@ -312,6 +312,42 @@ body.dragging .doc-tabs .chip{outline:2px dashed var(--salmon);outline-offset:2p
 .msg-head{display:grid;gap:6px;font-size:14px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .msg-head>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;overflow-wrap:anywhere}
 .msg-body{white-space:pre-wrap;font-size:14px;line-height:1.5;color:var(--ink-2)}
+/* Erkennung aus PDF/Foto */
+.ocr-card{margin-bottom:18px;border:1px solid var(--red-100)}
+.ocr-zone{display:flex;gap:16px;align-items:flex-start;padding:18px;border-radius:12px;background:linear-gradient(180deg,var(--red-50),#fff)}
+body.dragging .ocr-zone{outline:2px dashed var(--salmon);outline-offset:-6px}
+.ocr-zone.dz-over{outline:2px solid var(--red) !important;background:var(--red-100)}
+.ocr-ic{flex:none;width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--red-100);display:grid;place-items:center;color:var(--red)}
+.ocr-ic svg{width:26px;height:26px}.ocr-ic.ok{color:var(--ok);border-color:var(--ok-50)}
+.ocr-txt{flex:1;min-width:0}.ocr-txt>b{font-size:16px;overflow-wrap:anywhere}
+.ocr-steps{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.ocr-steps li::before{content:'○';display:inline-block;width:20px}
+.ocr-steps li.run{color:var(--ink);font-weight:600}.ocr-steps li.run::before{content:'◌';animation:spin 1s linear infinite}
+.ocr-steps li.done{color:var(--ok)}.ocr-steps li.done::before{content:'✓'}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ocr-sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ocr-sum .badge{white-space:normal;text-align:left}
+.field.ocr-ok .input,.field.ocr-ok .sel{border-color:var(--ok);background:var(--ok-50)}
+.field.ocr-unsure .input,.field.ocr-unsure .sel{border-color:var(--warn);background:var(--warn-50)}
+.field.ocr-ok>label::after{content:' · erkannt';color:var(--ok);font-weight:600}
+.field.ocr-unsure>label::after{content:' · bitte prüfen';color:var(--warn);font-weight:600}
+.mobile-cam{display:none}
+@media (pointer:coarse){.mobile-cam{display:inline-flex}}
+/* EWE / Mail / Kalender */
+.hint-box.warn{background:var(--warn-50);color:var(--ink)}.hint-box.warn>svg{color:var(--warn)}
+.gem-chips{display:flex;flex-wrap:wrap;gap:4px}.gem-chips span{font-size:12px;background:var(--line-2);border-radius:6px;padding:2px 7px}
+.gem-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 12px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.gem-grid .check{padding:4px 0}
+.vorlage{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.5}
+.mail-prev{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.mail-prev .mp-h{padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg)}
+.mail-prev .mp-b{padding:14px;white-space:pre-wrap;font-size:14px;line-height:1.55}
+.mail-form{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px 10px;align-items:center;margin-bottom:12px}
+.mail-form>label{font-size:13px;color:var(--muted);font-weight:500}
+.mf-ro{font-size:14px;padding:8px 0;overflow-wrap:anywhere}
+.mail-text{width:100%;font-size:14px;line-height:1.5;resize:vertical}
+.modal:has(.mail-form){max-width:760px}
+@media (max-width:900px){.vorlage{grid-template-columns:minmax(0,1fr)}.gem-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mail-form{grid-template-columns:minmax(0,1fr);gap:4px}}
 </style>
 </head>
 <body>
@@ -710,7 +746,7 @@ function updateList(){
 
 /* ---------- Detail / Erfassen ---------- */
 function vDetail(id){
-  const isNew=id===null; docTab='auff';
+  const isNew=id===null; docTab='auff'; if(isNew) ocrPending=null;
   const k=isNew?{id:null,art:'PK',zaehler:'',objekt:'',adresse:'',plz:'',ort:'',eigentuemer:'',rechnungsadresse:'',telEig:'',telMieter:'',bem1:'',bem2:'',projekt:'',kontrolleur:'livio',frist:monthEnd(3),termin:'',zeit:'',dringend:0,abrechnung:'pauschal',pauschale:370,periode:'20',aufwandH:2,log:[],fristHist:[]}:state.open.find(x=>x.id===id);
   if(!k) return `<a class="back" href="#/kontrollen">${ic('left')}Zurück</a><div class="card empty" style="margin-top:16px">Diese Kontrolle ist nicht mehr offen (evtl. bereits als durchgeführt gemeldet).</div>`;
   const opt=(arr,val)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(val)===String(v)?'selected':''}>${esc(l)}</option>`).join('');
@@ -728,6 +764,7 @@ function vDetail(id){
       <button class="btn" data-action="geour" data-id="${k.id}" title="Amtliche Karte Kanton Uri – präzise auch bei abgelegenen Adressen">${ic('map')}geo.ur.ch</button>
       <button class="btn btn-ok" data-action="modal" data-m="done" data-id="${k.id}">${ic('check')}Durchgeführt melden</button></div>`}
   </div>
+  ${isNew?ocrCard():''}
   <form id="kform" data-id="${k.id??''}" onsubmit="return false">
   <div class="grid g-2" style="align-items:start">
     <div class="grid" style="gap:18px">
@@ -765,18 +802,17 @@ function vDetail(id){
       </div></div>
     </div>
     <div class="grid" style="gap:18px">
-      ${isNew?`<div class="card"><div class="card-b"><div class="hint-box">${ic('bolt')}<div>In der finalen Version kann das Aufgebot (PDF/Mail des Netzbetreibers) direkt importiert werden – Adresse, Zählernummer und Frist werden dann automatisch übernommen.</div></div></div></div>
-      <div class="card"><div class="card-b"><div class="hint-box">${ic('pdf')}<div>Aufforderungen und Mail-Verläufe (PDF) können nach dem Anlegen per Drag &amp; Drop zum Objekt abgelegt werden.</div></div></div></div>`:`
+      ${isNew?`<div class="card"><div class="card-b"><div class="hint-box">${ic('pdf')}<div>Weitere Unterlagen (Aufforderungen, Mail-Verläufe, Fotos) können nach dem Anlegen per Drag &amp; Drop zum Objekt abgelegt werden.</div></div></div></div>`:`
       <div class="card"><div class="card-h"><h2>Aktionen</h2></div><div class="side-actions">
         <button class="btn" type="button" data-action="modal" data-m="call" data-id="${k.id}">${ic('phone')}Anruf protokollieren</button>
         <button class="btn" type="button" data-action="modal" data-m="termin" data-id="${k.id}">${ic('cal')}Termin ${k.termin?'verschieben':'vereinbaren'}</button>
         <button class="btn" type="button" data-action="modal" data-m="frist" data-id="${k.id}">${ic('flag')}Fristverlängerung beantragen</button>
-        <button class="btn" type="button" data-action="toast" data-msg="Terminbestätigung per Mail – in der finalen Version">${ic('mail')}Terminbestätigung senden</button>
+        <button class="btn" type="button" data-action="mailewe" data-id="${k.id}" ${k.termin?'':'disabled title="Zuerst Termin vereinbaren"'}>${ic('send')}Termin an EWE melden${k.mailEwe?` <span class="tiny muted">(gesendet ${fd(k.mailEwe)})</span>`:''}</button>
         <button class="btn btn-ok" type="button" data-action="modal" data-m="done" data-id="${k.id}">${ic('check')}Als durchgeführt melden</button>
       </div></div>
       <div class="card" id="docsCard">${docsCard(k)}</div>
       <div class="card"><div class="card-h"><h2>Verlauf</h2><span class="small muted">${k.log.length} Einträge</span></div>
-        <ul class="timeline">${k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit',doc:'pdf'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('')}</ul></div>`}
+        <ul class="timeline">${k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit',doc:'pdf',mail:'send',cal:'cal'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('')}</ul></div>`}
     </div>
   </div>
   <div class="sticky-save"><a class="btn" href="#/kontrollen">Abbrechen</a><button class="btn btn-primary" data-action="save">${ic('check')}${isNew?'Kontrolle anlegen':'Änderungen speichern'}</button></div>
@@ -791,13 +827,15 @@ function saveForm(){
   if(form.dataset.id){
     const k=state.open.find(x=>x.id===+form.dataset.id);
     const terminChanged=k.termin!==data.termin||k.zeit!==data.zeit;
+    const prev={termin:k.termin,zeit:k.zeit,kontrolleur:k.kontrolleur};
     Object.assign(k,data);
-    if(terminChanged&&data.termin) k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin vereinbart: ${fdw(k.termin)} ${k.zeit}`});
+    if(terminChanged&&data.termin) k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin ${prev.termin?'verschoben':'vereinbart'}: ${fdw(k.termin)} ${k.zeit}`});
     else k.log.push({t:'edit',d:toISO(TODAY),txt:'Angaben bearbeitet'});
+    if(terminChanged||prev.kontrolleur!==k.kontrolleur) syncCal(k,prev);
     toast('Änderungen gespeichert'); render();
   } else {
     const k={...data,id:state.nextId++,nr:state.open.length+1,log:[{t:'new',d:toISO(TODAY),txt:'Kontrolle erfasst'}],fristHist:[]};
-    state.open.push(k); toast('Kontrolle angelegt'); location.hash='#/kontrolle/'+k.id;
+    ocrAttach(k); state.open.push(k); toast('Kontrolle angelegt'); location.hash='#/kontrolle/'+k.id;
   }
 }
 
@@ -947,14 +985,18 @@ const RF_ACTIONS={
 
 /* ---------- Stammdaten ---------- */
 function vStamm(){
-  const tabs=[['arten','Kontrollarten'],['objekte','Objekttypen'],['plz','Gemeinden / PLZ'],['kt','Kontrolleure'],['tarif','Tarife']];
+  const tabs=[['arten','Kontrollarten'],['objekte','Objekttypen'],['plz','Gemeinden / PLZ'],['ewe','EWE / Netzbetreiber'],['kt','Kontrolleure'],['tarif','Tarife'],['vorlagen','Mail-Vorlagen'],['mail','E-Mail-Versand'],['kal','Outlook-Kalender']];
   let body='';
   if(ui.stamm==='arten') body=`<table class="t"><thead><tr><th class="ns">Kürzel</th><th class="ns">Bezeichnung</th><th class="ns">Std.-Periodizität</th><th class="ns" style="text-align:right">Std.-Pauschale</th></tr></thead><tbody>${ARTEN.map(a=>`<tr style="cursor:default"><td>${artTag(a.code)}</td><td>${a.name}</td><td>${perL(a.period)}</td><td style="text-align:right">${a.pauschale?chf(a.pauschale):'nach Aufwand'}</td></tr>`).join('')}</tbody></table>`;
   if(ui.stamm==='objekte') body=`<div class="card-b chips">${OBJEKTE.map(o=>`<span class="chip">${o}</span>`).join('')}</div>`;
-  if(ui.stamm==='plz') body=`<table class="t"><thead><tr><th class="ns">PLZ</th><th class="ns">Gemeinde</th><th class="ns">Offene Kontrollen</th></tr></thead><tbody>${PLZ.slice().sort((a,b)=>a[1].localeCompare(b[1])).map(p=>`<tr style="cursor:default"><td>${p[0]}</td><td>${p[1]}</td><td>${state.open.filter(k=>k.ort===p[1]).length||'–'}</td></tr>`).join('')}</tbody></table>`;
+  if(ui.stamm==='plz') body=`<table class="t"><thead><tr><th class="ns">PLZ</th><th class="ns">Gemeinde</th><th class="ns">EWE</th><th class="ns">Offene Kontrollen</th></tr></thead><tbody>${PLZ.slice().sort((a,b)=>a[1].localeCompare(b[1])).map(p=>`<tr style="cursor:default"><td>${p[0]}</td><td>${p[1]}</td><td>${(e=>e?`<span class="badge b-blue">${esc(e.kurz)}</span>`:'<span class="badge b-warn">fehlt</span>')(EWE.find(e=>e.gem.includes(p[1])))}</td><td>${state.open.filter(k=>k.ort===p[1]).length||'–'}</td></tr>`).join('')}</tbody></table>`;
   if(ui.stamm==='kt') body=`<table class="t"><thead><tr><th class="ns">Name</th><th class="ns">Kürzel</th><th class="ns">Rolle</th><th class="ns">Offen</th></tr></thead><tbody>${KONTROLLEURE.map(k=>`<tr style="cursor:default"><td>${ktDot(k.id)}</td><td>${k.kurz}</td><td>${k.id==='lukas'?'Administrator':'Kontrolleur'}</td><td>${state.open.filter(x=>x.kontrolleur===k.id).length}</td></tr>`).join('')}</tbody></table>`;
+  if(ui.stamm==='ewe') body=stammEwe();
+  if(ui.stamm==='vorlagen') body=stammVorlage();
+  if(ui.stamm==='mail') body=stammMail();
+  if(ui.stamm==='kal') body=stammKalender();
   if(ui.stamm==='tarif') body=`<div class="card-b form-grid" style="max-width:560px"><div class="field"><label>Stundenansatz (CHF/h)</label><input class="input" value="${STUNDENANSATZ}"></div><div class="field"><label>MWST-Satz</label><input class="input" value="8.1 %"></div></div>`;
-  return `<div class="page-head"><div><h1>Stammdaten</h1><div class="sub">Auswahllisten & Grundeinstellungen (bisher Blätter „Dropdown“ und „PLZ“)</div></div><button class="btn" data-action="toast" data-msg="Bearbeiten der Stammdaten folgt in der finalen Version">${ic('plus')}Eintrag hinzufügen</button></div>
+  return `<div class="page-head"><div><h1>Stammdaten</h1><div class="sub">Auswahllisten, EWE, Mail-Vorlagen und Versand-Einstellungen (bisher Blätter „Dropdown“ und „PLZ“)</div></div>${ui.stamm==='ewe'?`<button class="btn btn-primary" data-action="eweedit" data-id="">${ic('plus')}Neues EWE</button>`:['vorlagen','mail','kal'].includes(ui.stamm)?'':`<button class="btn" data-action="toast" data-msg="Bearbeiten der Stammdaten folgt in der finalen Version">${ic('plus')}Eintrag hinzufügen</button>`}</div>
   <div class="tabs">${tabs.map(([k,l])=>`<button class="tab ${ui.stamm===k?'on':''}" data-action="stamm" data-t="${k}">${l}</button>`).join('')}</div>
   <div class="card table-wrap">${body}</div>`;
 }
@@ -970,7 +1012,7 @@ function vMehr(){
     ${it('#/konto','user','Mein Konto','Passwort, Fingerabdruck-Login')}
     <div class="li" data-action="logout"><div class="tl-ic">${ic('logout')}</div><div class="body"><div class="t1">Abmelden</div><div class="t2">Angemeldet als ${esc(me().name)}</div></div></div>
     <div class="li" data-action="reset"><div class="tl-ic">${ic('reset')}</div><div class="body"><div class="t1">Demo-Daten zurücksetzen</div><div class="t2">Prototyp in den Ausgangszustand versetzen</div></div></div>
-  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.5</div>`;
+  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.7</div>`;
 }
 
 /* ---------- Anmeldung & Rollen ----------
@@ -1187,7 +1229,7 @@ const DOK_KAT=[['auff','Aufforderungen','Aufforderung'],['mail','Mail-Verläufe'
 const DOK_MAX=20*1024*1024;
 const isMsg=x=>/\.msg$/i.test(x.name);
 const MSG_MAGIC=[0xD0,0xCF,0x11,0xE0,0xA1,0xB1,0x1A,0xE1]; // OLE-Container (Outlook .msg)
-const DOK_ACCEPT='application/pdf,.pdf,.msg,application/vnd.ms-outlook';
+const DOK_ACCEPT='application/pdf,.pdf,.msg,application/vnd.ms-outlook,image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic';
 const docStore={}; let docTab='auff', docSeq=1;
 const objKey=k=>(k.adresse+'|'+k.plz).toLowerCase();
 const kb=n=>n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(n/1024))+' KB';
@@ -1234,11 +1276,11 @@ function docsCard(k){
     <div class="doc-tabs chips">${DOK_KAT.map(([c,l])=>`<button type="button" class="chip ${c===docTab?'on':''}" data-action="doctab" data-kat="${c}" data-doctab="${c}">${l} <span class="n">${cnt(c)}</span></button>`).join('')}</div>
     <div class="dropzone" data-dropzone="${k.id}">
       ${ic('upload')}
-      <div><b class="dz-desk">PDF oder Outlook-Mail hierher ziehen</b><b class="dz-mob">PDF oder Mail anhängen</b><div class="tiny muted">als ${kat[2]} · <span class="dz-desk">oder </span><label class="dz-pick">Datei wählen<input type="file" accept="${DOK_ACCEPT}" multiple hidden data-docinput="${k.id}"></label> · PDF oder .msg · max. 20 MB</div></div>
+      <div><b class="dz-desk">PDF, Foto oder Outlook-Mail hierher ziehen</b><b class="dz-mob">PDF, Foto oder Mail anhängen</b><div class="tiny muted">als ${kat[2]} · <span class="dz-desk">oder </span><label class="dz-pick">Datei wählen<input type="file" accept="${DOK_ACCEPT}" multiple hidden data-docinput="${k.id}"></label> · PDF, JPG/PNG/HEIC oder .msg · max. 20 MB</div></div>
     </div>
     ${shown.length?`<ul class="doc-list">${shown.map(x=>`<li>
-      <span class="doc-ic ${isMsg(x)?'msg':''}">${ic(isMsg(x)?'mail':'pdf')}</span>
-      <button type="button" class="doc-name" data-action="docopen" data-id="${k.id}" data-doc="${x.id}" title="Öffnen">${esc(x.mail?x.mail.betreff:x.name)}<span class="tiny muted">${isMsg(x)?'Outlook-Mail · ':''}${fd(x.d)} · ${esc(x.user)} · ${kb(x.size)}</span></button>
+      <span class="doc-ic ${isMsg(x)?'msg':''}">${ic(isMsg(x)?'mail':isImg(x)?'img':'pdf')}</span>
+      <button type="button" class="doc-name" data-action="docopen" data-id="${k.id}" data-doc="${x.id}" title="Öffnen">${esc(x.mail?x.mail.betreff:x.name)}<span class="tiny muted">${isMsg(x)?'Outlook-Mail · ':isImg(x)?'Foto · ':''}${fd(x.d)} · ${esc(x.user)} · ${kb(x.size)}</span></button>
       <button type="button" class="btn btn-icon" data-action="docdel" data-id="${k.id}" data-doc="${x.id}" title="Entfernen">${ic('trash')}</button></li>`).join('')}</ul>`
       :`<div class="doc-empty tiny muted">Noch keine ${kat[1]} zu diesem Objekt.</div>`}`;
 }
@@ -1248,13 +1290,12 @@ const kById=id=>state.open.find(x=>String(x.id)===String(id));
 async function addDocs(k,files,kat){
   const list=docsFor(k); let ok=0; const err=[];
   for(const f of files){
-    const head=new Uint8Array(await f.slice(0,8).arrayBuffer());
-    const pdf=String.fromCharCode(...head.slice(0,5))==='%PDF-', msg=isMsg(f)&&MSG_MAGIC.every((b,i)=>head[i]===b);
-    if(!pdf&&!msg){err.push(`„${f.name}“ ist weder PDF noch Outlook-Mail (.msg)`);continue}
+    const typ=await sniff(f), msg=typ==='msg'&&isMsg(f);
+    if(!(typ==='pdf'||typ==='img'||msg)){err.push(`„${f.name}“ ist weder PDF, Foto noch Outlook-Mail (.msg)`);continue}
     if(f.size>DOK_MAX){err.push(`„${f.name}“ ist grösser als 20 MB`);continue}
     if(list.some(x=>x.name===f.name&&x.size===f.size)){err.push(`„${f.name}“ ist bereits angehängt`);continue}
     list.push({id:docSeq++,kat,name:f.name,size:f.size,d:toISO(TODAY),user:me()?.name||'',file:f});
-    k.log.push({t:'doc',d:toISO(TODAY),txt:`${msg?'Mail':'PDF'} „${f.name}“ angehängt (${DOK_KAT.find(x=>x[0]===kat)[2]})`});
+    k.log.push({t:'doc',d:toISO(TODAY),txt:`${msg?'Mail':typ==='img'?'Foto':'PDF'} „${f.name}“ angehängt (${DOK_KAT.find(x=>x[0]===kat)[2]})`});
     ok++;
   }
   docTab=kat; refreshDocs(k); refreshLog(k);
@@ -1263,7 +1304,7 @@ async function addDocs(k,files,kat){
 }
 function refreshLog(k){
   const tl=document.querySelector('.timeline'); if(!tl) return;
-  tl.innerHTML=k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit',doc:'pdf'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('');
+  tl.innerHTML=k.log.slice().reverse().map(l=>`<li><div class="tl-ic ${l.t}">${ic({call:'phone',termin:'cal',frist:'flag',new:'plus',edit:'edit',doc:'pdf',mail:'send',cal:'cal'}[l.t]||'doc')}</div><div><div style="font-weight:500">${esc(l.txt)}</div><div class="tiny muted">${fd(l.d)}</div></div></li>`).join('');
   const c=tl.closest('.card')?.querySelector('.card-h .small'); if(c) c.textContent=k.log.length+' Einträge';
 }
 
@@ -1295,15 +1336,16 @@ document.addEventListener('dragenter',e=>{if(!hasFiles(e))return;dragDepth++;doc
 document.addEventListener('dragleave',e=>{if(!hasFiles(e))return;if(--dragDepth<=0){dragDepth=0;document.body.classList.remove('dragging')}});
 document.addEventListener('dragover',e=>{
   if(!hasFiles(e))return; e.preventDefault();
-  const z=e.target.closest('.dropzone,[data-doctab]');
+  const z=e.target.closest('.dropzone,[data-doctab],[data-ocrzone]');
   document.querySelectorAll('.dz-over').forEach(el=>el!==z&&el.classList.remove('dz-over'));
   if(z){z.classList.add('dz-over');e.dataTransfer.dropEffect='copy'} else e.dataTransfer.dropEffect='none';
 });
 document.addEventListener('drop',e=>{
   if(!hasFiles(e))return; e.preventDefault(); dragDepth=0;
   document.body.classList.remove('dragging'); document.querySelectorAll('.dz-over').forEach(el=>el.classList.remove('dz-over'));
+  const oz=e.target.closest('#ocrCard'); if(oz){ if(oz.querySelector('[data-ocrzone]')) ocrRun(e.dataTransfer.files[0]); return; }
   const tab=e.target.closest('[data-doctab]'), zone=e.target.closest('.dropzone');
-  if(!tab&&!zone){ if(document.querySelector('.dropzone')) toast('Datei bitte auf „Unterlagen zum Objekt“ ziehen',1); return; }
+  if(!tab&&!zone){ if(document.querySelector('[data-ocrzone]')) toast('Datei bitte auf „Aufforderung als PDF oder Foto ablegen“ ziehen',1); else if(document.querySelector('.dropzone')) toast('Datei bitte auf „Unterlagen zum Objekt“ ziehen',1); return; }
   const k=kById(document.querySelector('[data-dropzone]').dataset.dropzone);
   addDocs(k,[...e.dataTransfer.files],tab?tab.dataset.doctab:docTab);
 });
@@ -1312,6 +1354,304 @@ document.addEventListener('change',e=>{
   addDocs(kById(inp.dataset.docinput),[...inp.files],docTab); inp.value='';
 });
 
+/* ---------- Erkennung aus PDF / Foto (im Prototyp simuliert) ---------- */
+Object.assign(IC,{
+  scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 9h10M7 12h10M7 15h6"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  img:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>'
+});
+const IMG_ACCEPT='image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic';
+let ocrPending=null;
+const isImg=x=>/\.(jpe?g|png|heic|heif)$/i.test(x.name);
+async function sniff(f){
+  const h=new Uint8Array(await f.slice(0,12).arrayBuffer());
+  if(String.fromCharCode(...h.slice(0,5))==='%PDF-') return 'pdf';
+  if(h[0]===0xFF&&h[1]===0xD8&&h[2]===0xFF) return 'img';
+  if(h[0]===0x89&&h[1]===0x50&&h[2]===0x4E&&h[3]===0x47) return 'img';
+  if(String.fromCharCode(...h.slice(4,8))==='ftyp') return 'img'; // HEIC (iPhone)
+  if(MSG_MAGIC.every((b,i)=>h[i]===b)) return 'msg';
+  return '';
+}
+
+function ocrCard(){
+  return `<div class="card ocr-card" id="ocrCard"><div class="ocr-zone" data-ocrzone>
+    <div class="ocr-ic">${ic('scan')}</div>
+    <div class="ocr-txt"><b>Aufforderung als PDF oder Foto ablegen</b>
+      <div class="small muted">Adresse, Zählernummer, Eigentümer, Frist und Kontrollart werden erkannt und vorausgefüllt. Nicht Erkanntes wird von Hand ergänzt.</div>
+      <div class="btn-row" style="margin-top:10px">
+        <label class="btn btn-primary">${ic('upload')}Datei wählen<input type="file" hidden accept="application/pdf,.pdf,${IMG_ACCEPT}" data-ocrinput></label>
+        <label class="btn mobile-cam">${ic('camera')}Foto aufnehmen<input type="file" hidden accept="image/*" capture="environment" data-ocrinput></label>
+      </div>
+      <div class="tiny muted" style="margin-top:6px">PDF, JPG, PNG oder HEIC (iPhone) · max. 20 MB · <span class="dz-desk">oder einfach hierher ziehen · </span>Prototyp: Erkennung simuliert</div>
+    </div></div></div>`;
+}
+
+/* Beispiel-Erkennung: im Prototyp fiktive Werte, in der finalen Version Tesseract auf dem Server */
+function ocrDemoResult(foto){
+  let s=Date.now()%9973; const r=()=>(s=(s*16807)%2147483647)/2147483647; const pk=a=>a[Math.floor(r()*a.length)];
+  const plz=pk(PLZ.filter(p=>p[0]>=6400&&p[0]<6500)); const nn=pk(['Arnold','Gisler','Zgraggen','Imhof','Herger','Planzer','Tresch','Muheim','Walker']); const vn=pk(['Josef','Maria','Peter','Anna','Bruno','Ruth']);
+  const str=`${pk(['Dorfstrasse','Gotthardstrasse','Bahnhofstrasse','Kirchweg','Feldstrasse','Klausenstrasse'])} ${1+Math.floor(r()*40)}`;
+  return [ // [Feld, Wert, Sicherheit: ok|unsicher]
+    ['art','PK','ok'],['periode','20','ok'],['frist',monthEnd(5),'ok'],
+    ['adresse',str,'ok'],['plz',String(plz[0]),'ok'],['ort',plz[1],'ok'],
+    ['zaehler','6400'+String(100000+Math.floor(r()*899999)),foto?'unsicher':'ok'],
+    ['objekt','EFH','unsicher'],
+    ['eigentuemer',`${vn} ${nn}, ${str}, ${plz[0]} ${plz[1]}`,'ok'],
+    ['telEig',foto?'':`079 ${100+Math.floor(r()*899)} ${10+Math.floor(r()*89)} ${10+Math.floor(r()*89)}`,'unsicher'],
+  ];
+}
+const OCR_LABEL={art:'Kontrollart',periode:'Periodizität',frist:'Frist',adresse:'Adresse',plz:'PLZ',ort:'Ort',zaehler:'Zählernummer',objekt:'Objekt',eigentuemer:'Eigentümer',telEig:'Tel. Eigentümer'};
+
+async function ocrRun(f){
+  const typ=await sniff(f);
+  if(typ!=='pdf'&&typ!=='img') return toast(`„${f.name}“ ist weder PDF noch Bild (JPG, PNG, HEIC)`,1);
+  if(f.size>DOK_MAX) return toast(`„${f.name}“ ist grösser als 20 MB`,1);
+  const card=document.getElementById('ocrCard'); if(!card) return;
+  const steps=typ==='pdf'?['PDF lesen','Text erkennen','Felder zuordnen']:['Foto ausrichten','Text erkennen','Felder zuordnen'];
+  card.innerHTML=`<div class="ocr-zone busy"><div class="ocr-ic">${ic(typ==='pdf'?'pdf':'img')}</div><div class="ocr-txt"><b>${esc(f.name)}</b>
+    <ol class="ocr-steps">${steps.map((s,i)=>`<li data-step="${i}">${s}</li>`).join('')}</ol></div></div>`;
+  for(let i=0;i<steps.length;i++){
+    card.querySelector(`[data-step="${i}"]`).classList.add('run');
+    await new Promise(r=>setTimeout(r,550));
+    card.querySelector(`[data-step="${i}"]`).classList.replace('run','done');
+  }
+  const res=ocrDemoResult(typ==='img'), form=document.getElementById('kform');
+  form.querySelectorAll('.field').forEach(el=>el.classList.remove('ocr-ok','ocr-unsure'));
+  const found=[],unsure=[],missing=[];
+  for(const [name,val,sich] of res){
+    const el=form.querySelector(`[name="${name}"]`); if(!el) continue;
+    if(!val){missing.push(OCR_LABEL[name]);continue}
+    ocrFilling=true; el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); ocrFilling=false;
+    el.closest('.field').classList.add(sich==='ok'?'ocr-ok':'ocr-unsure');
+    (sich==='ok'?found:unsure).push(OCR_LABEL[name]);
+  }
+  missing.push('Kontrolltermin','Tel. Mieter');
+  ocrPending={file:f,name:f.name,size:f.size,typ};
+  card.innerHTML=`<div class="ocr-zone result"><div class="ocr-ic ok">${ic('checkc')}</div><div class="ocr-txt">
+    <b>${found.length+unsure.length} Felder aus „${esc(f.name)}“ übernommen</b>
+    <div class="ocr-sum"><span class="badge b-ok">${found.length} erkannt</span>${unsure.length?`<span class="badge b-warn">${unsure.length} bitte prüfen: ${esc(unsure.join(', '))}</span>`:''}<span class="badge b-grey">von Hand: ${esc(missing.join(', '))}</span></div>
+    <div class="tiny muted" style="margin-top:6px">Die Datei wird beim Speichern als Aufforderung am Objekt abgelegt. Grün = erkannt, orange = bitte prüfen.</div>
+    <div class="btn-row" style="margin-top:10px"><button type="button" class="btn" data-action="ocrview">${ic(typ==='pdf'?'pdf':'img')}Datei ansehen</button><button type="button" class="btn" data-action="ocrreset">${ic('x')}Andere Datei</button></div>
+  </div></div>`;
+  form.querySelector('.ocr-unsure input,.ocr-unsure select,.ocr-unsure textarea')?.scrollIntoView({block:'center',behavior:'smooth'});
+  toast(`${found.length+unsure.length} Felder vorausgefüllt – bitte prüfen`,0,'scan');
+}
+const OCR_ACTIONS={
+  ocrreset:()=>{ocrPending=null;const c=document.getElementById('ocrCard');if(c)c.outerHTML=ocrCard();document.querySelectorAll('#kform .field').forEach(el=>el.classList.remove('ocr-ok','ocr-unsure'))},
+  ocrview:()=>{if(!ocrPending)return;const u=URL.createObjectURL(ocrPending.file);window.open(u,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(u),60000)},
+};
+function ocrAttach(k){
+  if(!ocrPending) return;
+  docsFor(k).push({id:docSeq++,kat:'auff',name:ocrPending.name,size:ocrPending.size,d:toISO(TODAY),user:me()?.name||'',file:ocrPending.file});
+  k.log.push({t:'doc',d:toISO(TODAY),txt:`Erfasst aus ${ocrPending.typ==='pdf'?'PDF':'Foto'} „${ocrPending.name}“ (als Aufforderung abgelegt)`});
+  ocrPending=null;
+}
+document.addEventListener('change',e=>{
+  const inp=e.target.closest('[data-ocrinput]'); if(!inp||!inp.files[0]) return;
+  ocrRun(inp.files[0]); inp.value='';
+});
+// Von Hand geänderte Felder verlieren die Markierung
+let ocrFilling=false;
+for(const ev of ['input','change']) document.addEventListener(ev,e=>{ if(!ocrFilling) e.target.closest?.('#kform .field')?.classList.remove('ocr-ok','ocr-unsure'); });
+
+/* ---------- EWE (Netzbetreiber), Mail-Vorlage, E-Mail-Versand (im Prototyp simuliert) ---------- */
+Object.assign(IC,{send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',plug:'<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z"/>'});
+const GEMEINDEN=[...new Set(PLZ.map(p=>p[1]))].sort((a,b)=>a.localeCompare(b));
+// Demo-Einträge: Namen, Adressen und Zuordnung liefert der Kunde
+let EWE=[
+  {id:'ewa',kurz:'EWA',name:'EWA (Demo-Eintrag)',mail:'netz@ewa.beispiel.ch',cc:'',anrede:'Sehr geehrte Damen und Herren',gem:[]},
+  {id:'ewu',kurz:'EWU',name:'EWU (Demo-Eintrag)',mail:'netz@ewu.beispiel.ch',cc:'',anrede:'Sehr geehrte Damen und Herren',gem:['Andermatt','Hospental','Realp']},
+  {id:'gwe',kurz:'GWE',name:'GWE (Demo-Eintrag)',mail:'netz@gwe.beispiel.ch',cc:'',anrede:'Sehr geehrte Damen und Herren',gem:['Erstfeld']},
+  {id:'ew4',kurz:'EW 4',name:'Weiteres EWE 4 (Platzhalter)',mail:'netz@ew4.beispiel.ch',cc:'',anrede:'Sehr geehrte Damen und Herren',gem:['Göschenen','Gurtnellen','Wassen']},
+  {id:'ew5',kurz:'EW 5',name:'Weiteres EWE 5 (Platzhalter)',mail:'netz@ew5.beispiel.ch',cc:'',anrede:'Sehr geehrte Damen und Herren',gem:['Bauen','Isenthal','Seelisberg']},
+];
+EWE[0].gem=GEMEINDEN.filter(g=>!EWE.slice(1).some(e=>e.gem.includes(g))&&g!=='Sisikon'); // Sisikon bewusst ohne EWE (Demo: Warnung)
+const eweFor=k=>EWE.find(e=>e.gem.includes(String(k.ort||'').trim()));
+let MAILCFG={verfahren:'graph',absender:'info@gwe-elektrosicherheit.ch',anzeigename:'GWE Elektrosicherheit',tenant:'00000000-0000-0000-0000-000000000000',client:'11111111-1111-1111-1111-111111111111',secretBis:'2028-10-31',bcc:true,gesendete:true,getestet:''};
+let VORLAGE={betreff:'Terminmeldung unabhängige Kontrolle – «Adresse», «PLZ» «Ort» (Zähler «Zählernummer»)',
+  text:`«EWE-Anrede»
+
+Wir teilen Ihnen mit, dass die unabhängige Kontrolle für folgendes Objekt terminiert ist:
+
+Objekt: «Objekt», «Adresse», «PLZ» «Ort»
+Zählernummer: «Zählernummer»
+Eigentümer: «Eigentümer»
+Kontrollart: «Kontrollart»
+Kontrolltermin: «Wochentag», «Termin», «Zeit» Uhr
+Kontrolleur: «Kontrolleur»
+Frist gemäss Aufforderung: «Frist»
+
+Den Sicherheitsnachweis stellen wir Ihnen nach der Kontrolle zu.
+
+Freundliche Grüsse
+«Kontrolleur»
+GWE Elektrosicherheit`};
+const WTAG=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const PLATZ={
+  'Adresse':k=>k.adresse,'PLZ':k=>k.plz,'Ort':k=>k.ort,'Zählernummer':k=>k.zaehler||'–','Objekt':k=>k.objekt||'–',
+  'Eigentümer':k=>String(k.eigentuemer||'').split(/\n/)[0],'Kontrollart':k=>ART(k.art)?.name||k.art,
+  'Termin':k=>fd(k.termin),'Wochentag':k=>k.termin?WTAG[parse(k.termin).getDay()]:'–','Zeit':k=>k.zeit||'–',
+  'Kontrolleur':k=>KT(k.kontrolleur)?.name||'','Frist':k=>fd(k.frist),
+  'EWE':k=>eweFor(k)?.name||'','EWE-Anrede':k=>eweFor(k)?.anrede||'Sehr geehrte Damen und Herren','Absender':()=>MAILCFG.anzeigename,
+};
+const fill=(t,k)=>t.replace(/«([^»]+)»/g,(m,n)=>PLATZ[n]?String(PLATZ[n](k)??''):m);
+const unknownFields=t=>[...t.matchAll(/«([^»]+)»/g)].map(m=>m[1]).filter(n=>!PLATZ[n]);
+const mailOk=s=>s.split(/[;,]/).map(x=>x.trim()).filter(Boolean).every(x=>/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(x));
+
+/* Stammdaten-Reiter */
+function stammEwe(){
+  const ohne=GEMEINDEN.filter(g=>!EWE.some(e=>e.gem.includes(g)));
+  return `${ohne.length?`<div class="card-b"><div class="hint-box warn">${ic('alert')}<div><b>Ohne EWE:</b> ${esc(ohne.join(', '))}. Für Kontrollen in diesen Gemeinden muss die Empfängeradresse von Hand eingetragen werden.</div></div></div>`:''}
+  <table class="t"><thead><tr><th class="ns">Kürzel</th><th class="ns">Name</th><th class="ns">E-Mail</th><th class="ns">Gemeinden</th><th class="ns">Offen</th><th class="ns"></th></tr></thead><tbody>
+  ${EWE.map(e=>`<tr data-action="eweedit" data-id="${e.id}"><td><span class="badge b-blue">${esc(e.kurz)}</span></td><td>${esc(e.name)}</td><td class="nowrap">${esc(e.mail)}${e.cc?`<div class="tiny muted">CC ${esc(e.cc)}</div>`:''}</td>
+    <td><div class="gem-chips">${e.gem.map(g=>`<span>${esc(g)}</span>`).join('')||'<span class="muted">–</span>'}</div></td><td>${state.open.filter(k=>e.gem.includes(k.ort)).length}</td><td>${ic('edit','style="color:var(--muted)"')}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+function stammVorlage(){
+  const bsp=state.open.find(k=>k.termin&&eweFor(k))||state.open[0];
+  const unk=[...unknownFields(VORLAGE.betreff),...unknownFields(VORLAGE.text)];
+  return `<div class="card-b vorlage">
+    <div><div class="field"><label>Vorlage</label><select class="sel"><option>Terminmeldung an EWE</option></select></div>
+      <div class="field" style="margin-top:12px"><label for="v_betreff">Betreff</label><input class="input" id="v_betreff" value="${esc(VORLAGE.betreff)}" data-vorlage="betreff"></div>
+      <div class="field" style="margin-top:12px"><label for="v_text">Text</label><textarea class="input mono" id="v_text" rows="18" data-vorlage="text">${esc(VORLAGE.text)}</textarea></div>
+      <div class="small muted" style="margin:10px 0 6px">Seriendruckfelder einfügen (Klick fügt an der Cursor-Position ein):</div>
+      <div class="chips">${Object.keys(PLATZ).map(n=>`<button type="button" class="chip" data-action="vfeld" data-f="${esc(n)}">«${esc(n)}»</button>`).join('')}</div>
+      ${unk.length?`<div class="hint-box warn" style="margin-top:12px">${ic('alert')}<div>Unbekannte Felder: ${esc(unk.map(u=>'«'+u+'»').join(', '))}</div></div>`:''}
+      <div class="btn-row" style="margin-top:14px"><button class="btn btn-primary" data-action="vsave">${ic('check')}Vorlage speichern</button></div></div>
+    <div><div class="small muted" style="margin-bottom:6px">Vorschau mit ${esc(bsp.adresse)}, ${esc(bsp.ort)}</div>
+      <div class="mail-prev" id="vprev"><div class="mp-h"><b>${esc(fill(VORLAGE.betreff,bsp))}</b></div><div class="mp-b">${esc(fill(VORLAGE.text,bsp))}</div></div></div>
+  </div>`;
+}
+function stammMail(){
+  const ro=!isAdmin()?'disabled':'';
+  const days=diff(MAILCFG.secretBis);
+  return `<div class="card-b" style="max-width:820px">
+    ${!isAdmin()?`<div class="hint-box" style="margin-bottom:14px">${ic('lock')}<div>Nur der Administrator kann die Versand-Einstellungen ändern.</div></div>`:''}
+    <div class="form-grid">
+      <div class="field full"><label>Verfahren</label><select class="sel" ${ro} name="verfahren"><option value="graph">Microsoft 365 / Office 365 – Microsoft Graph (OAuth, empfohlen)</option><option disabled>SMTP mit Benutzername/Passwort – von Microsoft abgeschaltet</option></select></div>
+      <div class="field"><label>Absenderadresse (Postfach)</label><input class="input" ${ro} value="${esc(MAILCFG.absender)}" data-cfg="absender"></div>
+      <div class="field"><label>Anzeigename</label><input class="input" ${ro} value="${esc(MAILCFG.anzeigename)}" data-cfg="anzeigename"></div>
+      <div class="field"><label>Verzeichnis-ID (Tenant-ID)</label><input class="input mono" ${ro} value="${esc(MAILCFG.tenant)}" data-cfg="tenant"></div>
+      <div class="field"><label>Anwendungs-ID (Client-ID)</label><input class="input mono" ${ro} value="${esc(MAILCFG.client)}" data-cfg="client"></div>
+      <div class="field"><label>Geheimer Clientschlüssel</label><input class="input" ${ro} type="password" placeholder="•••••••••••• (hinterlegt – zum Ändern neu eingeben)"></div>
+      <div class="field"><label>Schlüssel gültig bis</label><input class="input" ${ro} type="date" value="${MAILCFG.secretBis}" data-cfg="secretBis"><div class="tiny ${days<30?'':'muted'}" style="${days<30?'color:var(--warn)':''}">${days<0?'abgelaufen – es werden keine Mails versendet':days<30?`läuft in ${days} Tagen ab – neuen Schlüssel erstellen`:`noch ${days} Tage; die App warnt 30 Tage vorher`}</div></div>
+    </div>
+    <label class="check" style="margin-top:14px"><input type="checkbox" checked disabled><span><b>BCC an Absender</b> (${esc(MAILCFG.absender)}) – immer aktiv, damit im Postfach kontrolliert werden kann, ob die Mail raus ist</span></label>
+    <label class="check"><input type="checkbox" ${MAILCFG.gesendete?'checked':''} ${ro} data-cfg="gesendete"><span>Zusätzlich unter „Gesendete Elemente“ im Postfach ablegen</span></label>
+    <div class="btn-row" style="margin-top:14px">${isAdmin()?`<button class="btn btn-primary" data-action="cfgsave">${ic('check')}Speichern</button>`:''}<button class="btn" data-action="cfgtest">${ic('send')}Testmail an ${esc(MAILCFG.absender)}</button>${MAILCFG.getestet?`<span class="badge b-ok" style="align-self:center">${ic('check','style="width:12px;height:12px"')}Test erfolgreich ${fd(MAILCFG.getestet)}</span>`:''}</div>
+    <div class="hint-box" style="margin-top:16px">${ic('bolt')}<div>Einrichtung einmalig im Microsoft-365-Admin-Center: App-Registrierung mit der Berechtigung <i>Mail.Send</i>, beschränkt auf das Postfach ${esc(MAILCFG.absender)}. Prototyp: Versand wird nur simuliert.</div></div>
+  </div>`;
+}
+
+/* EWE bearbeiten */
+function eweModal(id){
+  const e=EWE.find(x=>x.id===id)||{id:'',kurz:'',name:'',mail:'',cc:'',anrede:'Sehr geehrte Damen und Herren',gem:[]};
+  const owner=g=>EWE.find(x=>x.gem.includes(g)&&x.id!==e.id);
+  modal(e.id?`EWE bearbeiten – ${esc(e.kurz)}`:'Neues EWE',`
+    <div class="form-grid">
+      <div class="field"><label>Kürzel</label><input class="input" name="kurz" value="${esc(e.kurz)}" required></div>
+      <div class="field"><label>Name</label><input class="input" name="name" value="${esc(e.name)}" required></div>
+      <div class="field"><label>E-Mail (An)</label><input class="input" name="mail" type="email" value="${esc(e.mail)}" required></div>
+      <div class="field"><label>E-Mail (CC, optional)</label><input class="input" name="cc" value="${esc(e.cc)}" placeholder="mehrere mit ; trennen"></div>
+      <div class="field full"><label>Anrede in der Mail</label><input class="input" name="anrede" value="${esc(e.anrede)}"></div>
+    </div>
+    <div class="small" style="margin:14px 0 6px;font-weight:600">Zuständig für die Gemeinden</div>
+    <div class="gem-grid">${GEMEINDEN.map(g=>{const o=owner(g);return `<label class="check"><input type="checkbox" name="gem" value="${esc(g)}" ${e.gem.includes(g)?'checked':''}><span>${esc(g)}${o?` <span class="tiny muted">(jetzt ${esc(o.kurz)})</span>`:''}</span></label>`}).join('')}</div>
+    <div class="tiny muted" style="margin-top:8px">Jede Gemeinde gehört zu genau einem EWE. Wird eine Gemeinde hier gewählt, wird sie beim bisherigen EWE entfernt.</div>`,
+    `<button class="btn" data-action="close">Abbrechen</button><button class="btn btn-primary" data-action="ewesave" data-id="${e.id}">${ic('check')}Speichern</button>`);
+}
+
+/* Mail-Vorschau vor dem Versand */
+function mailModal(k){
+  const e=eweFor(k);
+  modal('E-Mail an EWE – Vorschau',`
+    ${e?'':`<div class="hint-box warn" style="margin-bottom:12px">${ic('alert')}<div>Für <b>${esc(k.ort)}</b> ist kein EWE hinterlegt. Bitte Empfänger von Hand eintragen oder die Gemeinde in den Stammdaten einem EWE zuweisen.</div></div>`}
+    <div class="mail-form">
+      <label>Von</label><div class="mf-ro">${esc(MAILCFG.anzeigename)} &lt;${esc(MAILCFG.absender)}&gt;</div>
+      <label for="mf_an">An</label><input class="input" id="mf_an" name="an" value="${esc(e?.mail||'')}" placeholder="adresse@ewe.ch" required>
+      <label for="mf_cc">CC</label><input class="input" id="mf_cc" name="cc" value="${esc(e?.cc||'')}" placeholder="optional, mehrere mit ; trennen">
+      <label>BCC</label><div class="mf-ro">${esc(MAILCFG.absender)} <span class="tiny muted">– Kopie an den Absender zur Kontrolle</span></div>
+      <label for="mf_betreff">Betreff</label><input class="input" id="mf_betreff" name="betreff" value="${esc(fill(VORLAGE.betreff,k))}">
+    </div>
+    <textarea class="input mail-text" name="text" rows="15">${esc(fill(VORLAGE.text,k))}</textarea>
+    <div class="tiny muted" style="margin-top:6px">Änderungen gelten nur für diese Mail. Die Vorlage selbst wird unter Stammdaten → Mail-Vorlagen gepflegt.</div>`,
+    `<button class="btn" data-action="close">Nicht senden</button><button class="btn btn-primary" data-action="mailsend" data-id="${k.id}">${ic('send')}Senden</button>`);
+}
+
+const MAIL_ACTIONS={
+  eweedit:d=>eweModal(d.id),
+  ewesave:d=>{const f=document.getElementById('mform'),v=Object.fromEntries(new FormData(f)),gem=[...f.querySelectorAll('[name=gem]:checked')].map(x=>x.value);
+    if(!v.kurz||!v.name||!mailOk(v.mail||'')) return toast('Kürzel, Name und gültige E-Mail angeben',1);
+    if(v.cc&&!mailOk(v.cc)) return toast('CC-Adresse ungültig',1);
+    let e=EWE.find(x=>x.id===d.id); if(!e){e={id:'e'+Date.now()};EWE.push(e)}
+    Object.assign(e,{kurz:v.kurz,name:v.name,mail:v.mail.trim(),cc:(v.cc||'').trim(),anrede:v.anrede||'',gem});
+    EWE.forEach(x=>{if(x!==e)x.gem=x.gem.filter(g=>!gem.includes(g))});
+    closeModal();toast('EWE gespeichert');render()},
+  vfeld:d=>{const t=document.activeElement?.dataset?.vorlage?document.activeElement:document.getElementById(ui.vfocus||'v_text');
+    const ins='«'+d.f+'»',s=t.selectionStart??t.value.length;t.value=t.value.slice(0,s)+ins+t.value.slice(t.selectionEnd??s);t.focus();t.selectionStart=t.selectionEnd=s+ins.length;t.dispatchEvent(new Event('input',{bubbles:true}))},
+  vsave:()=>{VORLAGE.betreff=document.getElementById('v_betreff').value;VORLAGE.text=document.getElementById('v_text').value;
+    const u=[...unknownFields(VORLAGE.betreff),...unknownFields(VORLAGE.text)];toast(u.length?`Gespeichert – unbekannte Felder: ${u.join(', ')}`:'Vorlage gespeichert',u.length>0);render()},
+  cfgsave:()=>{document.querySelectorAll('[data-cfg]').forEach(i=>MAILCFG[i.dataset.cfg]=i.type==='checkbox'?i.checked:i.value);toast('Einstellungen gespeichert');render()},
+  cfgtest:()=>{toast('Testmail wird gesendet …',0,'send');setTimeout(()=>{MAILCFG.getestet=toISO(TODAY);toast(`Testmail an ${MAILCFG.absender} gesendet (Prototyp: simuliert)`,0,'send');if(ui.stamm==='mail')render()},700)},
+  mailewe:d=>mailModal(state.open.find(x=>x.id===+d.id)),
+  mailsend:d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();
+    if(!v.an||!mailOk(v.an)) return toast('Bitte gültige Empfängeradresse angeben',1);
+    if(v.cc&&!mailOk(v.cc)) return toast('CC-Adresse ungültig',1);
+    if(diff(MAILCFG.secretBis)<0) return toast('Versand nicht möglich: Clientschlüssel abgelaufen (Stammdaten → E-Mail-Versand)',1);
+    const b=document.querySelector('[data-action="mailsend"]');b.disabled=true;b.innerHTML=ic('send')+'Wird gesendet …';
+    setTimeout(()=>{const e=eweFor(k);
+      k.log.push({t:'mail',d:toISO(TODAY),txt:`E-Mail an ${e?e.kurz:'EWE'} gesendet: ${v.an}${v.cc?' · CC '+v.cc:''} · BCC ${MAILCFG.absender}`});
+      k.mailEwe=toISO(TODAY);
+      closeModal();toast(`E-Mail an ${v.an} gesendet (Prototyp: simuliert)`,0,'send');render()},700)},
+};
+document.addEventListener('focusin',e=>{if(e.target.dataset?.vorlage) ui.vfocus=e.target.id});
+document.addEventListener('input',e=>{const t=e.target;if(!t.dataset?.vorlage)return;
+  const k=state.open.find(x=>x.termin&&eweFor(x))||state.open[0];const p=document.getElementById('vprev');if(!p)return;
+  const b=document.getElementById('v_betreff').value,x=document.getElementById('v_text').value;
+  p.innerHTML=`<div class="mp-h"><b>${esc(fill(b,k))}</b></div><div class="mp-b">${esc(fill(x,k))}</div>`});
+
+/* ---------- Outlook-Kalender der Kontrolleure (im Prototyp simuliert) ---------- */
+let CALCFG={aktiv:true,verfahren:'direkt',postfach:{livio:'livio@gwe-elektrosicherheit.ch',lukas:'lukas@gwe-elektrosicherheit.ch'}};
+const calTxt=k=>`${fdw(k.termin)} ${k.zeit||''}`.trim();
+function syncCal(k,prev){ // prev = Stand vor der Änderung
+  if(!CALCFG.aktiv) return '';
+  const was=prev&&prev.termin, now=!!k.termin, ktWechsel=prev&&prev.kontrolleur!==k.kontrolleur;
+  const name=id=>KT(id)?.name||id, out=[];
+  const log=t=>{k.log.push({t:'cal',d:toISO(TODAY),txt:t});out.push(t)};
+  if(was&&(!now||ktWechsel)) log(`Outlook-Kalender ${name(prev.kontrolleur)}: Termin ${fdw(prev.termin)} ${prev.zeit||''} entfernt`);
+  if(now&&(!was||ktWechsel)) log(`Outlook-Kalender ${name(k.kontrolleur)}: Termin ${calTxt(k)} eingetragen (blockiert ${k.aufwandH||2} h)`);
+  else if(now&&was&&(prev.termin!==k.termin||prev.zeit!==k.zeit)) log(`Outlook-Kalender ${name(k.kontrolleur)}: Termin verschoben ${fdw(prev.termin)} ${prev.zeit||''} → ${calTxt(k)}`);
+  return out.length?`Outlook-Kalender ${name(k.kontrolleur)} aktualisiert`:'';
+}
+const toMin=z=>{const [h,m]=(z||'08:00').split(':').map(Number);return h*60+(m||0)};
+function konflikte(id,termin,zeit,kt){
+  const k0=state.open.find(x=>x.id===id),dur=(k0?.aufwandH||2)*60,a=toMin(zeit);
+  return state.open.filter(x=>x.id!==id&&x.kontrolleur===kt&&x.termin===termin&&x.zeit).filter(x=>{const b=toMin(x.zeit),d2=(x.aufwandH||2)*60;return a<b+d2&&b<a+dur});
+}
+function konfliktHtml(id,termin,zeit,kt){
+  const c=konflikte(id,termin,zeit,kt);
+  return c.length?`<div class="hint-box warn">${ic('alert')}<div><b>${KT(kt).name} ist zu dieser Zeit schon gebucht:</b><br>${c.map(x=>`${esc(x.zeit)} ${esc(x.adresse)}, ${esc(x.ort)}`).join('<br>')}<div class="tiny muted">In der finalen Version wird zusätzlich der Outlook-Kalender auf private Termine geprüft.</div></div></div>`
+    :`<div class="tiny" style="color:var(--ok)">${ic('check','style="width:12px;height:12px;vertical-align:-2px"')} ${KT(kt).name} ist zu dieser Zeit frei${CALCFG.aktiv?' (App-Termine)':''}</div>`;
+}
+document.addEventListener('input',e=>{const f=e.target.closest('#mform');const box=document.getElementById('tkonf');if(!f||!box||!['termin','zeit','kontrolleur'].includes(e.target.name))return;
+  const v=Object.fromEntries(new FormData(f));box.innerHTML=konfliktHtml(+box.dataset.id,v.termin,v.zeit,v.kontrolleur||box.dataset.kt)});
+document.addEventListener('change',e=>{if(e.target.closest('#mform')&&e.target.name==='kontrolleur')e.target.dispatchEvent(new Event('input',{bubbles:true}))});
+function stammKalender(){
+  const ro=!isAdmin()?'disabled':'';
+  return `<div class="card-b" style="max-width:820px">
+    <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':''} ${ro} data-calcfg="aktiv"><span><b>Termine automatisch in den Outlook-Kalender des Kontrolleurs eintragen</b> – bei neuem Termin, Verschiebung, Kontrolleur-Wechsel und gelöschtem Termin</span></label>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="field full"><label>Verfahren</label><select class="sel" ${ro} data-calcfg="verfahren"><option value="direkt" ${CALCFG.verfahren==='direkt'?'selected':''}>Direkt im Kalender eintragen (Microsoft Graph, empfohlen – sofort blockiert, kein Annehmen nötig)</option><option value="ics" ${CALCFG.verfahren==='ics'?'selected':''}>Einladung per E-Mail (.ics) – Kontrolleur muss annehmen</option></select></div>
+      ${KONTROLLEURE.map(k=>`<div class="field"><label>Outlook-Postfach ${esc(k.name)}</label><input class="input" ${ro} value="${esc(CALCFG.postfach[k.id]||'')}" data-calpf="${k.id}"><div class="tiny muted">Beispieladresse – vom Kunden bestätigen</div></div>`).join('')}
+    </div>
+    <div class="hint-box" style="margin-top:14px">${ic('cal')}<div>Eintrag im Kalender: <b>Betreff</b> „Kontrolle PK – Adresse, Ort“, <b>Ort</b> = Objektadresse, <b>Dauer</b> = geschätzter Zeitaufwand, <b>Status</b> „Gebucht“, im Text Eigentümer, Telefon, Zählernummer und Link zur Kontrolle in der App. Prototyp: nur simuliert.</div></div>
+    ${isAdmin()?`<div class="btn-row" style="margin-top:14px"><button class="btn btn-primary" data-action="calsave">${ic('check')}Speichern</button></div>`:''}
+  </div>`;
+}
+Object.assign(MAIL_ACTIONS,{
+  calsave:()=>{document.querySelectorAll('[data-calcfg]').forEach(i=>CALCFG[i.dataset.calcfg]=i.type==='checkbox'?i.checked:i.value);
+    document.querySelectorAll('[data-calpf]').forEach(i=>CALCFG.postfach[i.dataset.calpf]=i.value.trim());toast('Kalender-Einstellungen gespeichert');render()},
+});
 /* ---------- Modals ---------- */
 function modal(title,body,foot){
   document.getElementById('layer').innerHTML=`<div class="overlay" data-action="closebg"><div class="modal" role="dialog" aria-modal="true"><div class="modal-h"><h2>${title}</h2><button class="btn btn-ghost btn-icon" data-action="close" aria-label="Schliessen">${ic('x')}</button></div>
@@ -1332,7 +1672,9 @@ function openModal(m,id){
   if(m==='termin') modal(k.termin?'Termin verschieben':'Termin vereinbaren',`${head}
     <div class="form-grid"><div class="field"><label>Datum</label><input class="input" type="date" name="termin" value="${k.termin||addDays(2)}" required></div><div class="field"><label>Zeit</label><input class="input" type="time" name="zeit" value="${k.zeit||'08:00'}"></div>
     <div class="field full"><label>Kontrolleur</label><select class="sel" name="kontrolleur">${KONTROLLEURE.map(x=>`<option value="${x.id}" ${x.id===k.kontrolleur?'selected':''}>${x.name}</option>`).join('')}</select></div></div>
-    <label class="check"><input type="checkbox" checked name="mail"><span>Terminbestätigung an Eigentümer senden <span class="muted small">(finale Version)</span></span></label>`,
+    <div id="tkonf" data-id="${k.id}" data-kt="${k.kontrolleur}" style="margin:4px 0 10px">${konfliktHtml(k.id,k.termin||addDays(2),k.zeit||'08:00',k.kontrolleur)}</div>
+    <label class="check"><input type="checkbox" ${CALCFG.aktiv?'checked':'disabled'} name="cal"><span>Im Outlook-Kalender des Kontrolleurs ${k.termin?'verschieben':'eintragen'}${CALCFG.aktiv?'':' <span class="muted small">(in den Stammdaten ausgeschaltet)</span>'}</span></label>
+    <label class="check"><input type="checkbox" checked name="ewe"><span>Danach E-Mail an ${eweFor(k)?`<b>${esc(eweFor(k).kurz)}</b> (${esc(eweFor(k).mail)})`:'das EWE <span class="muted small">(für '+esc(k.ort)+' kein EWE hinterlegt)</span>'} vorbereiten – mit Vorschau</span></label>`,
     cancel+`<button class="btn btn-primary" data-action="m-termin" data-id="${id}">Termin speichern</button>`);
   if(m==='frist') modal('Fristverlängerung beantragen',`${head}
     <div class="form-grid"><div class="field"><label>Aktuelle Frist</label><input class="input" value="${fd(k.frist)}" disabled></div><div class="field"><label>Neue Frist</label><input class="input" type="date" name="neu" value="${diff(k.frist)>0?addDays(90,parse(k.frist)):addDays(90)}" required></div>
@@ -1383,11 +1725,14 @@ const A={
   fakt:d=>{const x=state.done.find(v=>v.id===+d.id);x.verrechnet=!x.verrechnet;toast(x.verrechnet?'Als verrechnet markiert':'Verrechnung zurückgenommen');setTimeout(updateDone,10)},
   'm-call':d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();
     k.log.push({t:'call',d:toISO(TODAY),txt:v.res+(v.note?' – '+v.note:'')});
-    if(v.res==='Termin vereinbart'&&v.termin){k.termin=v.termin;k.zeit=v.zeit;k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin vereinbart: ${fdw(k.termin)} ${k.zeit}`})}
+    if(v.res==='Termin vereinbart'&&v.termin){const prev={termin:k.termin,zeit:k.zeit,kontrolleur:k.kontrolleur};k.termin=v.termin;k.zeit=v.zeit;k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin vereinbart: ${fdw(k.termin)} ${k.zeit}`});syncCal(k,prev)}
     closeModal();toast('Anruf protokolliert');render()},
   'm-termin':d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();if(!v.termin)return;
-    k.termin=v.termin;k.zeit=v.zeit;k.kontrolleur=v.kontrolleur;k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin vereinbart: ${fdw(k.termin)} ${k.zeit} (${KT(k.kontrolleur).name})`});
-    closeModal();toast(`Termin am ${fdw(k.termin)} ${k.zeit} gespeichert`);render()},
+    const prev={termin:k.termin,zeit:k.zeit,kontrolleur:k.kontrolleur};
+    k.termin=v.termin;k.zeit=v.zeit;k.kontrolleur=v.kontrolleur;k.log.push({t:'termin',d:toISO(TODAY),txt:`Termin ${prev.termin?'verschoben':'vereinbart'}: ${fdw(k.termin)} ${k.zeit} (${KT(k.kontrolleur).name})`});
+    const cal=v.cal?syncCal(k,prev):'';
+    closeModal();toast(`Termin am ${fdw(k.termin)} ${k.zeit} gespeichert${cal?' · '+cal:''}`,0,'cal');render();
+    if(v.ewe) setTimeout(()=>mailModal(k),400)},
   'm-frist':d=>{const k=state.open.find(x=>x.id===+d.id),v=mval();if(!v.neu)return;
     k.fristHist.push({alt:k.frist,neu:v.neu,am:toISO(TODAY),grund:v.grund||'–'});k.log.push({t:'frist',d:toISO(TODAY),txt:`Fristverlängerung ${fd(k.frist)} → ${fd(v.neu)}`});k.frist=v.neu;
     closeModal();toast('Fristverlängerung erfasst');render()},
@@ -1398,10 +1743,11 @@ const A={
     if(v.folge&&k.periode){const n={...k,id:state.nextId++,frist:addYears(v.datum,perJ(k.periode)),termin:'',zeit:'',dringend:0,bem1:'',bem2:'',fristHist:[],log:[{t:'new',d:toISO(TODAY),txt:`Folgekontrolle aus Kontrolle vom ${fd(v.datum)} erzeugt`}]};state.open.push(n);msg+=` · Folgekontrolle ${parse(n.frist).getFullYear()} angelegt`}
     closeModal();toast(msg);location.hash='#/kontrollen'},
 };
-Object.assign(A,AUTH_ACTIONS,DOC_ACTIONS,RF_ACTIONS);
+Object.assign(A,AUTH_ACTIONS,DOC_ACTIONS,RF_ACTIONS,OCR_ACTIONS,MAIL_ACTIONS);
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-action]'); if(!el) return;
   if(el.dataset.action==='fakt') return; // via change-Event
+  if(el.dataset.action==='closebg'&&e.target!==el) return; // Klicks im Dialog (z.B. Checkboxen) nicht abfangen
   if(el.tagName==='A'&&el.getAttribute('href')&&el.dataset.action!=='chip') return;
   e.preventDefault();
   A[el.dataset.action]?.(el.dataset,e,el);
