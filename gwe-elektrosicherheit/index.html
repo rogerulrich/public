@@ -290,6 +290,24 @@ body.dragging .doc-tabs .chip{outline:2px dashed var(--salmon);outline-offset:2p
 .doc-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:var(--ink);font-weight:500;display:flex;flex-direction:column;overflow-wrap:anywhere}
 .doc-name:hover{color:var(--red)}
 .doc-empty{padding:4px 18px 16px}
+/* Report / Datenschnitte */
+.slicers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px 18px 18px}
+.slicers-card .card-h{flex-wrap:wrap;gap:8px}
+.slicer{border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.sl-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:14px;min-height:24px}
+.sl-x{border:0;background:var(--red-50);color:var(--red);border-radius:6px;width:24px;height:24px;display:grid;place-items:center;cursor:pointer;padding:0}
+.sl-x svg{width:14px;height:14px}
+.sl-b{display:flex;flex-wrap:wrap;gap:6px}
+.sl-b .chip{padding:4px 10px;font-size:13px}
+.sl-b .chip.dim{opacity:.45}
+.t.rep tfoot td{border-top:2px solid var(--line);padding-top:10px;padding-bottom:10px}
+@media (max-width:1180px){.slicers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){.slicers{grid-template-columns:minmax(0,1fr);padding:12px}.hide-sm{display:none}}
+@media print{
+  .sidebar,.topbar,.mobile-head,.bottom-nav,.fab,.slicers-card,.page-head .btn-row,.list-foot,.toast{display:none !important}
+  .app,body{display:block;background:#fff}.main,main{padding:0 !important;margin:0 !important}
+  .card{box-shadow:none;break-inside:avoid}.print-sel{color:#000 !important;font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -451,7 +469,7 @@ function seed(){
   const vn=['Josef','Maria','Peter','Anna','Bruno','Ruth','Thomas','Monika','Franz','Daniela','Kurt','Sandra','Urs','Heidi'];
   const str=['Dorfstrasse','Gotthardstrasse','Bahnhofstrasse','Kirchweg','Feldstrasse','Schulweg','Reussweg','Lehnplatz','Klausenstrasse','Rütli','Hellgasse','Bristenstrasse'];
   const done=[];
-  for(let m=12;m>=0;m--){
+  for(let m=TODAY.getMonth()+36;m>=0;m--){
     const mStart=new Date(TODAY.getFullYear(),TODAY.getMonth()-m,1);
     const mEnd=m===0?new Date(TODAY.getTime()-864e5):new Date(TODAY.getFullYear(),TODAY.getMonth()-m+1,0);
     const days=Math.max(1,Math.round((mEnd-mStart)/864e5)+1);
@@ -464,7 +482,7 @@ function seed(){
       const plz=pick(PLZ); const d=toISO(dt); const age=diff(d);
       done.push({id:id++,art,zaehler:'64000'+Math.floor(10000+rnd()*89999),objekt:pick(OBJEKTE),adresse:`${pick(str)} ${1+Math.floor(rnd()*60)}`,plz:String(plz[0]),ort:plz[1],
         eigentuemer:`${pick(vn)} ${pick(nn)}`,kontrolleur:rnd()<.55?'livio':'lukas',frist:addYears(d,0),durchgefuehrt:d,aufwandH:h,betrag,abrechnung:auf?'aufwand':'pauschal',
-        periode:ART(art).period,sina:age<-12||rnd()<.5?addDays(Math.min(-1,age+3)):'',kbAn:pick(['Eigentümer','Eigentümer','Verwaltung','Netzbetreiber']),verrechnet:age<-25||(age<-7&&rnd()<.5)});
+        periode:art==='GP'?'GP':art==='PK'?pick(['20','20','20','20','10','10','10','5','5S','',''] ):art==='AK'?pick(['20','20','']):'',sina:age<-12||rnd()<.5?addDays(Math.min(-1,age+3)):'',kbAn:pick(['Eigentümer','Eigentümer','Verwaltung','Netzbetreiber']),verrechnet:age<-25||(age<-7&&rnd()<.5)});
     }
   }
   done.sort((a,b)=>b.durchgefuehrt.localeCompare(a.durchgefuehrt));
@@ -474,7 +492,7 @@ function seed(){
     {id:3,username:'livio',name:'Livio',rolle:'kontrolleur',kt:'livio',aktiv:true,last:addDays(-2),bio:1},
   ];
   state={open,done,users,nextId:id,nextUser:4};
-  ui={q:'',chip:'alle',art:'',ort:'',kt:'',sort:'frist',dir:1,week:0,year:TODAY.getFullYear(),stamm:'arten',dq:'',dfilter:'alle'};
+  ui={q:'',chip:'alle',art:'',ort:'',kt:'',sort:'frist',dir:1,week:0,year:TODAY.getFullYear(),stamm:'arten',dq:'',dfilter:'alle',rlim:50,rf:{jahr:[String(TODAY.getFullYear())],quartal:[],monat:[],art:[],periode:[],kt:[]}};
 }
 
 /* ---------- Status-Logik (entspricht den Excel-Formeln & bedingten Formatierungen) ---------- */
@@ -845,32 +863,83 @@ function vFristen(){
 
 /* ---------- Auswertung ---------- */
 function vAuswertung(){
-  const y=ui.year; const d=state.done.filter(x=>x.durchgefuehrt.startsWith(y));
-  const ums=d.reduce((s,x)=>s+x.betrag,0);
-  const per=MONATE.map((l,i)=>{const m=d.filter(x=>+x.durchgefuehrt.slice(5,7)===i+1);return{l,v:m.reduce((s,x)=>s+x.betrag,0),n:m.length}});
-  const q=[1,2,3,4].map(i=>{const m=d.filter(x=>Math.ceil(+x.durchgefuehrt.slice(5,7)/3)===i);return{l:'Q'+i,n:m.length,v:m.reduce((s,x)=>s+x.betrag,0)}});
-  const byKt=KONTROLLEURE.map(k=>{const m=d.filter(x=>x.kontrolleur===k.id);return{k,n:m.length,v:m.reduce((s,x)=>s+x.betrag,0),h:m.reduce((s,x)=>s+x.aufwandH,0)}});
-  const byArt=ARTEN.map(a=>{const m=d.filter(x=>x.art===a.code);return{a,n:m.length,v:m.reduce((s,x)=>s+x.betrag,0)}}).filter(x=>x.n);
-  const offen=state.done.filter(x=>!x.verrechnet);
-  const years=[...new Set(state.done.map(x=>+x.durchgefuehrt.slice(0,4)))].sort().reverse();
-  const row=(c1,n,v,tot)=>`<tr style="cursor:default"><td>${c1}</td><td style="text-align:right">${n}</td><td style="text-align:right" class="nowrap">${chf(v)}</td><td style="width:30%"><div class="meter"><i style="width:${tot?v/tot*100:0}%;background:var(--red)"></i></div></td></tr>`;
+  const F=ui.rf, all=state.done;
+  const yr=x=>x.durchgefuehrt.slice(0,4), mo=x=>+x.durchgefuehrt.slice(5,7), qu=x=>'Q'+Math.ceil(mo(x)/3), pe=x=>x.periode||'';
+  const DIM={jahr:yr,quartal:qu,monat:x=>String(mo(x)),art:x=>x.art,periode:pe,kt:x=>x.kontrolleur};
+  const pass=(x,skip)=>Object.keys(DIM).every(k=>k===skip||!F[k].length||F[k].includes(DIM[k](x)));
+  const d=all.filter(x=>pass(x));
+  const sum=a=>a.reduce((s,x)=>s+x.betrag,0), ums=sum(d);
+  // Datenschnitt wie in Excel: Mehrfachauswahl, Zahl = Treffer unter Berücksichtigung der übrigen Filter
+  const SL=[
+    ['jahr','Jahr',[...new Set(all.map(yr))].sort().reverse().map(v=>[v,v])],
+    ['quartal','Quartal',['Q1','Q2','Q3','Q4'].map(v=>[v,v])],
+    ['monat','Monat',MONATE.map((l,i)=>[String(i+1),l])],
+    ['art','Kontrollart',ARTEN.map(a=>[a.code,a.code+' – '+a.name])],
+    ['periode','Periodizität',[...PERIODEN.map(([v,l])=>[v,l]),['','(leer)']]],
+    ['kt','Kontrolleur',KONTROLLEURE.map(k=>[k.id,k.name])],
+  ];
+  const nAct=Object.values(F).reduce((s,a)=>s+a.length,0);
+  const slicer=([key,label,items])=>{const base=all.filter(x=>pass(x,key));
+    return `<div class="slicer"><div class="sl-h"><b>${label}</b>${F[key].length?`<button type="button" class="sl-x" data-action="rfclear" data-k="${key}" title="Filter löschen">${ic('x')}</button>`:''}</div>
+    <div class="sl-b">${items.map(([v,l])=>{const n=base.filter(x=>DIM[key](x)===v).length;return `<button type="button" class="chip ${F[key].includes(v)?'on':''} ${n?'':'dim'}" data-action="rf" data-k="${key}" data-v="${esc(v)}">${esc(l)} <span class="n">${n}</span></button>`}).join('')}</div></div>`};
+  // Verlauf: ein Jahr gewählt → pro Monat, sonst pro Jahr
+  const yrs=[...new Set(d.map(yr))].sort();
+  const one=F.jahr.length===1||yrs.length===1;
+  const per=one?MONATE.map((l,i)=>{const m=d.filter(x=>mo(x)===i+1);return{l,v:sum(m),n:m.length}})
+               :yrs.map(y=>{const m=d.filter(x=>yr(x)===y);return{l:y,v:sum(m),n:m.length}});
+  const grp=(arr,keyFn,lab)=>arr.map(([v,l])=>{const m=d.filter(x=>keyFn(x)===v);return{l:lab?lab(v,l):l,n:m.length,v:sum(m),h:m.reduce((s,x)=>s+x.aufwandH,0)}}).filter(x=>x.n);
+  const q=grp(['Q1','Q2','Q3','Q4'].map(v=>[v,v]),qu);
+  const byKt=grp(KONTROLLEURE.map(k=>[k.id,k.name]),x=>x.kontrolleur,v=>ktDot(v));
+  const byArt=grp(ARTEN.map(a=>[a.code,a.name]),x=>x.art,v=>artTag(v));
+  const byPer=grp([...PERIODEN.map(([v,l])=>[v,l]),['','(leer)']],pe);
+  const offen=d.filter(x=>!x.verrechnet);
+  const row=x=>`<tr style="cursor:default"><td>${x.l}</td><td style="text-align:right">${x.n}</td><td style="text-align:right" class="nowrap">${chf(x.v)}</td><td style="width:26%"><div class="meter"><i style="width:${ums?x.v/ums*100:0}%;background:var(--red)"></i></div></td></tr>`;
+  const tbl=(t,a)=>`<div class="card"><div class="card-h"><h2>${t}</h2></div><table class="t"><thead><tr><th class="ns"></th><th class="ns" style="text-align:right">Anz.</th><th class="ns" style="text-align:right">Umsatz</th><th class="ns"></th></tr></thead><tbody>${a.length?a.map(row).join(''):'<tr><td colspan="4" class="muted small">keine Daten</td></tr>'}</tbody></table></div>`;
+  const sel=SL.filter(([k])=>F[k].length).map(([k,l,items])=>l+': '+F[k].map(v=>(items.find(i=>i[0]===v)||[,v])[1]).join(', ')).join(' · ');
+  const list=d.slice().sort((a,b)=>b.durchgefuehrt.localeCompare(a.durchgefuehrt));
+  const LIM=ui.rlim||50;
   return `
-  <div class="page-head"><div><h1>Auswertung & Faktura</h1><div class="sub">Umsatz und Anzahl Kontrollen nach Monat, Quartal, Kontrolleur und Kontrollart</div></div>
-    <div class="btn-row"><select class="sel" data-filter="year">${years.map(v=>`<option ${v===y?'selected':''}>${v}</option>`).join('')}</select><button class="btn hide-m" data-action="toast" data-msg="PDF/Excel-Report in der finalen Version">${ic('dl')}Report</button></div></div>
-  <div class="grid g-kpi" style="grid-template-columns:repeat(4,minmax(0,1fr))">
-    <div class="card kpi" style="cursor:default"><div class="lbl">Umsatz ${y}</div><div class="val">${chf(ums)}</div><div class="hint">Summe Schlussrechnungen</div></div>
-    <div class="card kpi" style="cursor:default"><div class="lbl">Kontrollen ${y}</div><div class="val">${d.length}</div><div class="hint">durchgeführt</div></div>
+  <div class="page-head"><div><h1>Auswertung & Faktura</h1><div class="sub">Report wie im Excel (Faktura 1/2): mit den Datenschnitten Jahr, Quartal, Monat, Kontrollart, Periodizität und Kontrolleur filtern</div></div>
+    <div class="btn-row"><button class="btn" data-action="rfcsv">${ic('dl')}Excel (CSV)</button><button class="btn hide-m" data-action="rfprint">${ic('doc')}Drucken / PDF</button></div></div>
+  <div class="card slicers-card"><div class="card-h"><h2>Datenschnitte</h2><span class="small muted hide-sm">Mehrfachauswahl möglich · nichts gewählt = alle</span>${nAct?`<button class="btn" style="margin-left:auto" data-action="rfreset">${ic('x')}Alle Filter löschen</button>`:''}</div>
+    <div class="slicers">${SL.map(slicer).join('')}</div></div>
+  <div class="grid g-kpi" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-top:18px">
+    <div class="card kpi" style="cursor:default"><div class="lbl">Anzahl Kontrollen</div><div class="val">${d.length}</div><div class="hint">${nAct?'gefiltert':'alle Jahre'}</div></div>
+    <div class="card kpi" style="cursor:default"><div class="lbl">Umsatz</div><div class="val">${chf(ums)}</div><div class="hint">Summe Schlussrechnungen</div></div>
     <div class="card kpi" style="cursor:default"><div class="lbl">Ø pro Kontrolle</div><div class="val">${chf(d.length?ums/d.length:0)}</div><div class="hint">${d.filter(x=>x.abrechnung==='aufwand').length} nach Aufwand</div></div>
-    <div class="card kpi warn" data-action="go" data-href="#/erledigt" onclick="ui.dfilter='nofakt'"><div class="lbl">Noch nicht verrechnet</div><div class="val">${chf(offen.reduce((s,x)=>s+x.betrag,0))}</div><div class="hint">${offen.length} Kontrollen →</div></div>
+    <div class="card kpi warn" data-action="go" data-href="#/erledigt" onclick="ui.dfilter='nofakt'"><div class="lbl">Noch nicht verrechnet</div><div class="val">${chf(sum(offen))}</div><div class="hint">${offen.length} Kontrollen →</div></div>
   </div>
-  <div class="card" style="margin-top:18px"><div class="card-h"><h2>Umsatz pro Monat ${y}</h2><span class="small muted">Balken antippen für Details</span></div>
-    <div class="card-b chart">${barChart(per,v=>chf(v),v=>v>=1000?(v/1000)+"k":v)}</div></div>
-  <div class="grid g-3" style="margin-top:18px">
-    <div class="card"><div class="card-h"><h2>Pro Quartal</h2></div><table class="t"><thead><tr><th class="ns"></th><th class="ns" style="text-align:right">Anz.</th><th class="ns" style="text-align:right">Umsatz</th><th class="ns"></th></tr></thead><tbody>${q.map(x=>row(x.l,x.n,x.v,ums)).join('')}</tbody></table></div>
-    <div class="card"><div class="card-h"><h2>Pro Kontrolleur</h2></div><table class="t"><thead><tr><th class="ns"></th><th class="ns" style="text-align:right">Anz.</th><th class="ns" style="text-align:right">Umsatz</th><th class="ns"></th></tr></thead><tbody>${byKt.map(x=>row(ktDot(x.k.id)+`<div class="tiny muted">${x.h} h</div>`,x.n,x.v,ums)).join('')}</tbody></table></div>
-    <div class="card"><div class="card-h"><h2>Pro Kontrollart</h2></div><table class="t"><thead><tr><th class="ns"></th><th class="ns" style="text-align:right">Anz.</th><th class="ns" style="text-align:right">Umsatz</th><th class="ns"></th></tr></thead><tbody>${byArt.map(x=>row(artTag(x.a.code),x.n,x.v,ums)).join('')}</tbody></table></div>
-  </div>`;
+  ${sel?`<div class="small muted print-sel" style="margin-top:10px">Filter: ${esc(sel)}</div>`:''}
+  <div class="card" style="margin-top:18px"><div class="card-h"><h2>Umsatz pro ${one?'Monat'+(yrs.length?' '+yrs[0]:''):'Jahr'}</h2></div>
+    <div class="card-b chart">${barChart(per.length?per:[{l:'–',v:0,n:0}],v=>chf(v),v=>v>=1000?(v/1000)+"k":v)}</div></div>
+  <div class="grid g-2e" style="margin-top:18px">${tbl('Pro Quartal',q)}${tbl('Pro Periodizität',byPer)}</div>
+  <div class="grid g-2e" style="margin-top:18px">${tbl('Pro Kontrollart',byArt)}${tbl('Pro Kontrolleur',byKt)}</div>
+  <div class="card" style="margin-top:18px"><div class="card-h"><h2>Kontrollen im Report</h2><span class="small muted">${d.length} Einträge · ${chf(ums)}</span></div>
+    <div class="table-wrap"><table class="t rep"><thead><tr><th class="ns">Datum</th><th class="ns">Art</th><th class="ns">Adresse</th><th class="ns hide-sm">Eigentümer</th><th class="ns">Periodizität</th><th class="ns hide-sm">Quartal</th><th class="ns hide-sm">Kontrolleur</th><th class="ns" style="text-align:right">Schlussrechnung</th></tr></thead>
+    <tbody>${list.slice(0,LIM).map(x=>`<tr style="cursor:default"><td class="nowrap">${fd(x.durchgefuehrt)}</td><td>${artTag(x.art)}</td><td>${esc(x.adresse)}, ${esc(x.ort)}</td><td class="hide-sm">${esc(x.eigentuemer)}</td><td class="nowrap">${x.periode?perL(x.periode):'<span class="muted">–</span>'}</td><td class="hide-sm">${qu(x)} ${yr(x)}</td><td class="hide-sm">${ktDot(x.kontrolleur)}</td><td style="text-align:right" class="nowrap">${chf(x.betrag)}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td colspan="7" class="tot-l"><b>Total ${d.length} Kontrollen</b></td><td style="text-align:right" class="nowrap"><b>${chf(ums)}</b></td></tr></tfoot></table></div>
+    ${list.length>LIM?`<div class="list-foot"><span>${LIM} von ${list.length} angezeigt</span><a data-action="rfmore" style="color:var(--red);font-weight:500">Alle anzeigen</a></div>`:''}</div>`;
 }
+const RF_ACTIONS={
+  rf:d=>{const a=ui.rf[d.k],i=a.indexOf(d.v);if(i<0)a.push(d.v);else a.splice(i,1);ui.rlim=50;render()},
+  rfclear:d=>{ui.rf[d.k]=[];render()},
+  rfreset:()=>{Object.keys(ui.rf).forEach(k=>ui.rf[k]=[]);render()},
+  rfmore:()=>{ui.rlim=100000;render()},
+  rfprint:()=>{ui.rlim=100000;render();setTimeout(()=>window.print(),50)},
+  rfcsv:()=>{
+    const F=ui.rf,mo=x=>+x.durchgefuehrt.slice(5,7);
+    const DIM={jahr:x=>x.durchgefuehrt.slice(0,4),quartal:x=>'Q'+Math.ceil(mo(x)/3),monat:x=>String(mo(x)),art:x=>x.art,periode:x=>x.periode||'',kt:x=>x.kontrolleur};
+    const d=state.done.filter(x=>Object.keys(DIM).every(k=>!F[k].length||F[k].includes(DIM[k](x)))).sort((a,b)=>a.durchgefuehrt.localeCompare(b.durchgefuehrt));
+    const MN=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const c=v=>{v=String(v??'');return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+    const rows=[['Kontrollart','Adresse','Ort','Eigentümer','Kontrolltermin','Schlussrechnung','Periodizität','Monat','Quartal','Jahr','Anzahl Kontrollen','Kontrolleur','Verrechnet']]
+      .concat(d.map(x=>[x.art,x.adresse,x.ort,x.eigentuemer,fd(x.durchgefuehrt),x.betrag.toFixed(2),x.periode?perL(x.periode):'',MN[mo(x)-1],DIM.quartal(x),DIM.jahr(x),1,KONTROLLEURE.find(k=>k.id===x.kontrolleur)?.name||'',x.verrechnet?'ja':'nein']));
+    rows.push(['Total','','','','',d.reduce((s,x)=>s+x.betrag,0).toFixed(2),'','','','',d.length,'','']);
+    const blob=new Blob(['﻿'+rows.map(r=>r.map(c).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Faktura-Report_${toISO(TODAY)}.csv`;document.body.appendChild(a);a.click();a.remove();
+    toast(`${d.length} Kontrollen exportiert`,0,'dl');
+  },
+};
 
 /* ---------- Stammdaten ---------- */
 function vStamm(){
@@ -897,7 +966,7 @@ function vMehr(){
     ${it('#/konto','user','Mein Konto','Passwort, Fingerabdruck-Login')}
     <div class="li" data-action="logout"><div class="tl-ic">${ic('logout')}</div><div class="body"><div class="t1">Abmelden</div><div class="t2">Angemeldet als ${esc(me().name)}</div></div></div>
     <div class="li" data-action="reset"><div class="tl-ic">${ic('reset')}</div><div class="body"><div class="t1">Demo-Daten zurücksetzen</div><div class="t2">Prototyp in den Ausgangszustand versetzen</div></div></div>
-  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.3</div>`;
+  </div><div class="small muted" style="text-align:center;margin-top:20px">GWE Elektrosicherheit · Prototyp v0.4</div>`;
 }
 
 /* ---------- Anmeldung & Rollen ----------
@@ -1305,7 +1374,7 @@ const A={
     if(v.folge&&k.periode){const n={...k,id:state.nextId++,frist:addYears(v.datum,perJ(k.periode)),termin:'',zeit:'',dringend:0,bem1:'',bem2:'',fristHist:[],log:[{t:'new',d:toISO(TODAY),txt:`Folgekontrolle aus Kontrolle vom ${fd(v.datum)} erzeugt`}]};state.open.push(n);msg+=` · Folgekontrolle ${parse(n.frist).getFullYear()} angelegt`}
     closeModal();toast(msg);location.hash='#/kontrollen'},
 };
-Object.assign(A,AUTH_ACTIONS,DOC_ACTIONS);
+Object.assign(A,AUTH_ACTIONS,DOC_ACTIONS,RF_ACTIONS);
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-action]'); if(!el) return;
   if(el.dataset.action==='fakt') return; // via change-Event
